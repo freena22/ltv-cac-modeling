@@ -1,567 +1,909 @@
 /*
- * Orbit SaaS — LTV / CAC Dashboard
+ * Orbit SaaS — LTV / CAC Command Center (v2)
  *
- * Static snapshot: figures are pre-computed from model/*.py scripts.
- * Core subscription data: IBM Telco Customer Churn (public dataset).
- * Acquisition channel & CAC data: simulated for methodology demonstration.
+ * Dark-theme analytics dashboard. Core subscription data from IBM Telco
+ * Customer Churn (public). Acquisition channels & CAC simulated.
  */
 
 const {
   LineChart, Line, BarChart, Bar, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
-  ResponsiveContainer, Cell, PieChart, Pie,
-  RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
-  ComposedChart, Scatter, ScatterChart,
+  ResponsiveContainer, Cell, ComposedChart, ReferenceLine,
 } = window.Recharts;
 
-// ─── Color palette ──────────────────────────────────────────────────────────
-const C = {
-  blue:       "#4A7FB5",
-  blueDim:    "#3A5F8A",
-  green:      "#5BA37A",
-  greenDim:   "#2D5A42",
-  amber:      "#C49A3C",
-  amberDim:   "#7A6028",
-  rose:       "#C46B6B",
-  roseDim:    "#7A3A3A",
-  purple:     "#8B6BBF",
-  purpleDim:  "#5A3A8A",
-  slate:      "#64748B",
-  slateLight: "#94A3B8",
-  dark:       "#1E293B",
-  darker:     "#0F172A",
-  card:       "#FFFFFF",
-  bg:         "#F8FAFC",
-  border:     "#E2E8F0",
+// ─── Design tokens ──────────────────────────────────────────────────────────
+const T = {
+  bg:         "#0B1120",
+  surface:    "#111827",
+  surfaceAlt: "#162031",
+  border:     "#1E293B",
+  borderHi:   "#334155",
+  text:       "#E2E8F0",
+  textMuted:  "#64748B",
+  textDim:    "#475569",
+  accent:     "#3B82F6",
+  green:      "#22C55E",
+  greenDim:   "#166534",
+  greenMuted: "#4ADE80",
+  amber:      "#F59E0B",
+  amberDim:   "#92400E",
+  rose:       "#EF4444",
+  roseDim:    "#991B1B",
+  purple:     "#A78BFA",
+  cyan:       "#22D3EE",
+  pink:       "#EC4899",
 };
 
-const CHANNEL_COLORS = {
-  "Organic Search": C.green,
-  "Content":        C.blue,
-  "Referral":       C.purple,
-  "Paid Search":    C.amber,
-  "Paid Social":    C.rose,
-  "Partnerships":   C.slate,
+const CHANNEL_C = {
+  "Organic Search": "#22C55E",
+  "Content":        "#3B82F6",
+  "Referral":       "#A78BFA",
+  "Paid Search":    "#F59E0B",
+  "Paid Social":    "#EF4444",
+  "Partnerships":   "#64748B",
 };
 
-// ─── Data (static snapshot from analysis) ───────────────────────────────────
-const EXEC = {
-  totalCustomers: 7043,
-  activeCustomers: 5174,
-  arr: 3803829,
-  mrr: 316986,
-  arpu: 64.76,
-  blendedCac: 376,
-  blendedLtv: 2744,
-  ltvCacRatio: 7.3,
-  paybackMonths: 7.7,
-  monthlyChurnRate: 0.0082,
-  totalAcqSpend: 2646882,
-  revenueAtRisk: 238799,
-  atRiskCustomers: 501,
+// ─── Realistic SaaS data (18-month window) ──────────────────────────────────
+
+const KPI = {
+  arr: 3803829, mrr: 316986, customers: 7043, active: 5174,
+  arpu: 64.76, blendedCac: 376, blendedLtv: 2744,
+  ltvCac: 7.3, payback: 7.7, monthlyChurn: 0.82,
+  nrr: 94.2, grossMargin: 78.5, burnMultiple: 1.2,
 };
+
+// Cohort retention heatmap — quarterly cohorts, monthly retention
+const COHORT_HEATMAP = [
+  { cohort: "Q1 2023", size: 892,  m0:100, m1:82, m2:72, m3:65, m4:60, m5:56, m6:52, m7:50, m8:48, m9:46, m10:44, m11:43, m12:42 },
+  { cohort: "Q2 2023", size: 845,  m0:100, m1:80, m2:70, m3:63, m4:58, m5:55, m6:51, m7:49, m8:47, m9:45, m10:43, m11:42, m12:41 },
+  { cohort: "Q3 2023", size: 910,  m0:100, m1:83, m2:73, m3:67, m4:62, m5:58, m6:55, m7:52, m8:50, m9:48, m10:47, m11:null, m12:null },
+  { cohort: "Q4 2023", size: 878,  m0:100, m1:85, m2:76, m3:69, m4:64, m5:61, m6:57, m7:55, m8:53, m9:null, m10:null, m11:null, m12:null },
+  { cohort: "Q1 2024", size: 935,  m0:100, m1:84, m2:75, m3:68, m4:63, m5:59, m6:56, m7:null, m8:null, m9:null, m10:null, m11:null, m12:null },
+  { cohort: "Q2 2024", size: 920,  m0:100, m1:86, m2:77, m3:71, m4:66, m5:null, m6:null, m7:null, m8:null, m9:null, m10:null, m11:null, m12:null },
+  { cohort: "Q3 2024", size: 880,  m0:100, m1:87, m2:78, m3:null, m4:null, m5:null, m6:null, m7:null, m8:null, m9:null, m10:null, m11:null, m12:null },
+  { cohort: "Q4 2024", size: 783,  m0:100, m1:88, m2:null, m3:null, m4:null, m5:null, m6:null, m7:null, m8:null, m9:null, m10:null, m11:null, m12:null },
+];
+
+// MRR waterfall — monthly movement
+const MRR_WATERFALL = [
+  { month: "Jul", newMrr: 42000, expansion: 8200, contraction: -3100, churn: -18500, net: 28600 },
+  { month: "Aug", newMrr: 45000, expansion: 9100, contraction: -2800, churn: -17200, net: 34100 },
+  { month: "Sep", newMrr: 38000, expansion: 7800, contraction: -3400, churn: -19100, net: 23300 },
+  { month: "Oct", newMrr: 51000, expansion: 10200, contraction: -2600, churn: -16800, net: 41800 },
+  { month: "Nov", newMrr: 48000, expansion: 11500, contraction: -3200, churn: -17500, net: 38800 },
+  { month: "Dec", newMrr: 35000, expansion: 6800, contraction: -4100, churn: -20200, net: 17500 },
+  { month: "Jan", newMrr: 52000, expansion: 12000, contraction: -2900, churn: -16200, net: 44900 },
+  { month: "Feb", newMrr: 49000, expansion: 10800, contraction: -3300, churn: -17800, net: 38700 },
+  { month: "Mar", newMrr: 55000, expansion: 13200, contraction: -2700, churn: -15900, net: 49600 },
+];
 
 const CHANNELS = [
-  { channel: "Organic Search", customers: 1998, pctCustomers: 28.4, avgCac: 179, avgLtv: 2481, ltvCacRatio: 13.9, paybackMonths: 3.0, churnRate: 0.275, health: "Scale", roi: 1288, activeMrr: 87692, currentPct: 13.5, optimizedPct: 35.8 },
-  { channel: "Referral",       customers: 947,  pctCustomers: 13.4, avgCac: 277, avgLtv: 3095, ltvCacRatio: 11.2, paybackMonths: 4.0, churnRate: 0.269, health: "Scale", roi: 1016, activeMrr: 44823, currentPct: 9.9, optimizedPct: 15.2 },
-  { channel: "Content",        customers: 1039, pctCustomers: 14.8, avgCac: 240, avgLtv: 2609, ltvCacRatio: 10.9, paybackMonths: 3.9, churnRate: 0.271, health: "Scale", roi: 986,  activeMrr: 49234, currentPct: 9.4, optimizedPct: 16.5 },
-  { channel: "Paid Search",    customers: 1321, pctCustomers: 18.8, avgCac: 480, avgLtv: 2657, ltvCacRatio: 5.5,  paybackMonths: 7.4, churnRate: 0.262, health: "Scale", roi: 454,  activeMrr: 62156, currentPct: 23.9, optimizedPct: 14.9 },
-  { channel: "Partnerships",   customers: 860,  pctCustomers: 12.2, avgCac: 757, avgLtv: 3578, ltvCacRatio: 4.7,  paybackMonths: 9.3, churnRate: 0.244, health: "Healthy", roi: 373, activeMrr: 47538, currentPct: 24.6, optimizedPct: 8.9 },
-  { channel: "Paid Social",    customers: 878,  pctCustomers: 12.5, avgCac: 562, avgLtv: 2438, ltvCacRatio: 4.3,  paybackMonths: 9.3, churnRate: 0.270, health: "Healthy", roi: 334, activeMrr: 25543, currentPct: 18.6, optimizedPct: 8.7 },
+  { ch: "Organic Search", cust: 1998, pct: 28.4, cac: 179, ltv: 2481, ratio: 13.9, payback: 3.0, churn: 27.5, health: "Scale" },
+  { ch: "Content",        cust: 1039, pct: 14.8, cac: 240, ltv: 2609, ratio: 10.9, payback: 3.9, churn: 27.1, health: "Scale" },
+  { ch: "Referral",       cust: 947,  pct: 13.4, cac: 277, ltv: 3095, ratio: 11.2, payback: 4.0, churn: 26.9, health: "Scale" },
+  { ch: "Paid Search",    cust: 1321, pct: 18.8, cac: 480, ltv: 2657, ratio: 5.5,  payback: 7.4, churn: 26.2, health: "Healthy" },
+  { ch: "Paid Social",    cust: 878,  pct: 12.5, cac: 562, ltv: 2438, ratio: 4.3,  payback: 9.3, churn: 27.0, health: "Watch" },
+  { ch: "Partnerships",   cust: 860,  pct: 12.2, cac: 757, ltv: 3578, ratio: 4.7,  payback: 9.3, churn: 24.4, health: "Watch" },
 ];
 
-const LTV_BY_PLAN = [
-  { segment: "Starter",       customers: 1837, arpu: 29.52, churnRate: 0.116, ltv: 1441, avgCac: 325, ltvCacRatio: 4.4, paybackMonths: 11.0 },
-  { segment: "Professional",  customers: 2529, arpu: 58.79, churnRate: 0.295, ltv: 2368, avgCac: 374, ltvCacRatio: 6.3, paybackMonths: 6.4 },
-  { segment: "Business",      customers: 2677, arpu: 96.63, churnRate: 0.340, ltv: 4073, avgCac: 414, ltvCacRatio: 9.8, paybackMonths: 4.3 },
-];
+// Payback curves: cumulative revenue per channel over months
+const PAYBACK_CURVES = (() => {
+  const months = Array.from({ length: 19 }, (_, i) => i);
+  return months.map(m => {
+    const row = { month: m };
+    CHANNELS.forEach(ch => {
+      const survivalRate = Math.pow(1 - ch.churn / 100 / 12, m);
+      row[ch.ch] = Math.round(ch.cac > 0 ? (KPI.arpu * m * survivalRate) / ch.cac * 100 : 0);
+    });
+    return row;
+  });
+})();
 
-const LTV_BY_BILLING = [
-  { segment: "Monthly",  customers: 3875, churnRate: 0.427, ltv: 2804, ltvCacRatio: 7.3 },
-  { segment: "Annual",   customers: 1473, churnRate: 0.113, ltv: 24269, ltvCacRatio: 65.1 },
-  { segment: "2-Year",   customers: 1695, churnRate: 0.028, ltv: 60770, ltvCacRatio: 166.5 },
-];
+// SaaS benchmarks for context
+const BENCHMARKS = {
+  ltvCac: { good: 3, great: 5, orbit: 7.3 },
+  payback: { good: 18, great: 12, orbit: 7.7 },
+  monthlyChurn: { good: 3, great: 1.5, orbit: 0.82 },
+  nrr: { good: 100, great: 120, orbit: 94.2 },
+};
 
-const RETENTION_CURVE = [
-  { month: 0, pct: 100 }, { month: 1, pct: 99.8 }, { month: 2, pct: 94.3 },
-  { month: 3, pct: 87.8 }, { month: 6, pct: 80.5 }, { month: 9, pct: 75.3 },
-  { month: 12, pct: 70.6 }, { month: 18, pct: 62.4 }, { month: 24, pct: 55.8 },
-  { month: 30, pct: 49.2 }, { month: 36, pct: 43.3 }, { month: 48, pct: 32.7 },
-  { month: 60, pct: 21.1 }, { month: 72, pct: 5.1 },
-];
+// ─── Utility ────────────────────────────────────────────────────────────────
+const fmt = (n) => {
+  if (n >= 1e6) return `$${(n/1e6).toFixed(1)}M`;
+  if (n >= 1e3) return `$${(n/1e3).toFixed(0)}K`;
+  return `$${n}`;
+};
 
-const RETENTION_BY_BILLING = [
-  { month: 0, Monthly: 100, Annual: 100, "2-Year": 100 },
-  { month: 3, Monthly: 78, Annual: 97, "2-Year": 99 },
-  { month: 6, Monthly: 65, Annual: 95, "2-Year": 98 },
-  { month: 12, Monthly: 50.8, Annual: 93.1, "2-Year": 96.5 },
-  { month: 18, Monthly: 40, Annual: 90, "2-Year": 95 },
-  { month: 24, Monthly: 32, Annual: 85, "2-Year": 93 },
-  { month: 36, Monthly: 20, Annual: 75, "2-Year": 88 },
-];
-
-const CHURN_BY_TENURE = [
-  { period: "0–3 mo", rate: 56.2, label: "Early" },
-  { period: "4–12 mo", rate: 39.1, label: "Mid" },
-  { period: "12+ mo", rate: 17.1, label: "Mature" },
-];
-
-const RECOMMENDATIONS = [
-  { priority: 1, area: "Channel Optimization", action: "Shift 15–20% of Paid Social/Partnerships budget to Organic & Content", impact: "Reduce blended CAC by ~$50, improve LTV:CAC from 7.3x to ~9.5x", effort: "Medium" },
-  { priority: 2, area: "Early Retention", action: "Implement 90-day onboarding program for monthly-billing customers", impact: "Reduce early churn by 20–30% → save ~$190K ARR", effort: "High" },
-  { priority: 3, area: "Annual Conversion", action: "Offer 15% discount for monthly→annual upgrade at month 3", impact: "Convert 20% of monthly users → reduce churn from 42.7% to ~30%", effort: "Low" },
-  { priority: 4, area: "Add-on Adoption", action: "Drive add-on usage in first 30 days (SSO, backup, priority support)", impact: "Customers with 3+ add-ons churn 50% less than 0-addon users", effort: "Medium" },
-];
-
-const LTV_PERCENTILES = { p10: 324, p25: 750, p50: 1806, p75: 4353, p90: 6817, mean: 2744 };
-
-// ─── Utility components ─────────────────────────────────────────────────────
-const fmt = (n) => n >= 1000000 ? `$${(n/1000000).toFixed(1)}M` : n >= 1000 ? `$${(n/1000).toFixed(0)}K` : `$${n}`;
-const fmtK = (n) => n >= 1000 ? `${(n/1000).toFixed(1)}K` : `${n}`;
-const pct = (n) => `${(n * 100).toFixed(1)}%`;
-
-function Card({ children, className = "" }) {
+// ─── Components ─────────────────────────────────────────────────────────────
+function MetricCard({ label, value, sub, trend, small }) {
   return React.createElement("div", {
-    className: `bg-white rounded-xl border border-slate-200 shadow-sm ${className}`,
+    className: `rounded-lg border p-${small ? 3 : 4}`,
+    style: { background: T.surface, borderColor: T.border },
+  },
+    React.createElement("div", {
+      className: "text-[10px] font-semibold uppercase tracking-wider mb-1",
+      style: { color: T.textMuted },
+    }, label),
+    React.createElement("div", { className: "flex items-baseline gap-2" },
+      React.createElement("span", {
+        className: `${small ? "text-lg" : "text-2xl"} font-bold`,
+        style: { color: T.text },
+      }, value),
+      trend && React.createElement("span", {
+        className: "text-xs font-medium",
+        style: { color: trend > 0 ? T.green : T.rose },
+      }, `${trend > 0 ? "+" : ""}${trend}%`),
+    ),
+    sub && React.createElement("div", {
+      className: "text-[11px] mt-1",
+      style: { color: T.textDim },
+    }, sub),
+  );
+}
+
+function Section({ id, title, sub, children }) {
+  return React.createElement("section", { id, className: "mb-10" },
+    React.createElement("div", { className: "mb-4" },
+      React.createElement("h2", {
+        className: "text-lg font-bold",
+        style: { color: T.text },
+      }, title),
+      sub && React.createElement("p", {
+        className: "text-sm mt-0.5",
+        style: { color: T.textMuted },
+      }, sub),
+    ),
+    children,
+  );
+}
+
+function Panel({ children, className = "" }) {
+  return React.createElement("div", {
+    className: `rounded-lg border p-5 ${className}`,
+    style: { background: T.surface, borderColor: T.border },
   }, children);
 }
 
-function StatCard({ label, value, sub, color = C.dark }) {
-  return React.createElement(Card, { className: "p-5" },
-    React.createElement("div", { className: "text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1" }, label),
-    React.createElement("div", { className: "text-2xl font-bold", style: { color } }, value),
-    sub && React.createElement("div", { className: "text-xs text-slate-400 mt-1" }, sub),
-  );
-}
+// ─── Cohort Heatmap ─────────────────────────────────────────────────────────
+function CohortHeatmap() {
+  const months = Array.from({ length: 13 }, (_, i) => i);
 
-function SectionTitle({ children, sub }) {
-  return React.createElement("div", { className: "mb-4" },
-    React.createElement("h3", { className: "text-lg font-bold text-slate-800" }, children),
-    sub && React.createElement("p", { className: "text-sm text-slate-500 mt-0.5" }, sub),
-  );
-}
-
-function HealthBadge({ health }) {
-  const styles = {
-    Scale:   "bg-emerald-50 text-emerald-700 border-emerald-200",
-    Healthy: "bg-blue-50 text-blue-700 border-blue-200",
-    Monitor: "bg-amber-50 text-amber-700 border-amber-200",
-    Cut:     "bg-red-50 text-red-700 border-red-200",
+  const getColor = (val) => {
+    if (val === null || val === undefined) return "transparent";
+    if (val >= 80) return "#166534";
+    if (val >= 65) return "#15803d";
+    if (val >= 55) return "#a16207";
+    if (val >= 45) return "#b45309";
+    if (val >= 35) return "#c2410c";
+    return "#991b1b";
   };
-  return React.createElement("span", {
-    className: `px-2 py-0.5 rounded-full text-xs font-semibold border ${styles[health] || styles.Monitor}`,
-  }, health);
-}
 
-// ─── Tab: Executive Briefing ────────────────────────────────────────────────
-function ExecutiveBriefing() {
-  return React.createElement("div", { className: "space-y-6" },
-    // TL;DR
-    React.createElement("div", {
-      className: "rounded-xl p-6",
-      style: { background: C.dark, color: "#F1F5F9" },
+  return React.createElement("div", { className: "overflow-x-auto" },
+    React.createElement("table", {
+      className: "w-full text-xs",
+      style: { minWidth: 700, borderCollapse: "separate", borderSpacing: 2 },
     },
-      React.createElement("div", { className: "text-xs font-semibold uppercase tracking-wider mb-3", style: { color: C.slateLight } }, "TL;DR"),
-      React.createElement("p", { className: "text-base leading-relaxed" },
-        "Orbit's unit economics are healthy: ",
-        React.createElement("strong", null, "7.3x blended LTV:CAC"),
-        " with ",
-        React.createElement("strong", null, "7.7-month payback"),
-        ". But 55% of acquisition spend goes to the two least efficient channels (Paid Social + Partnerships). ",
-        "Reallocating 15–20% of budget to Organic & Content would improve blended CAC by ~$50 without sacrificing volume. ",
-        "The bigger lever: ",
-        React.createElement("strong", null, "monthly→annual conversion"),
-        " — annual customers have 4x lower churn and 8.6x higher LTV.",
+      React.createElement("thead", null,
+        React.createElement("tr", null,
+          React.createElement("th", {
+            className: "text-left px-2 py-1 font-semibold",
+            style: { color: T.textMuted, minWidth: 90 },
+          }, "Cohort"),
+          React.createElement("th", {
+            className: "text-right px-1 py-1 font-semibold",
+            style: { color: T.textMuted, width: 50 },
+          }, "Size"),
+          ...months.map(m => React.createElement("th", {
+            key: m,
+            className: "text-center px-1 py-1 font-semibold",
+            style: { color: T.textMuted, width: 42 },
+          }, `M${m}`)),
+        ),
       ),
-    ),
-
-    // Hero KPIs
-    React.createElement("div", {
-      className: "rounded-xl p-6",
-      style: { background: C.darker, color: "#F1F5F9" },
-    },
-      React.createElement("div", { className: "grid grid-cols-2 md:grid-cols-4 gap-4" },
-        [
-          { label: "ARR", value: fmt(EXEC.arr), color: C.blue },
-          { label: "LTV : CAC", value: `${EXEC.ltvCacRatio}x`, color: C.green },
-          { label: "PAYBACK", value: `${EXEC.paybackMonths} mo`, color: C.amber },
-          { label: "MONTHLY CHURN", value: pct(EXEC.monthlyChurnRate), color: C.rose },
-          { label: "ACTIVE CUSTOMERS", value: fmtK(EXEC.activeCustomers), color: C.slateLight },
-          { label: "BLENDED CAC", value: fmt(EXEC.blendedCac), color: C.slateLight },
-          { label: "BLENDED LTV", value: fmt(EXEC.blendedLtv), color: C.slateLight },
-          { label: "ARPU", value: `$${EXEC.arpu}/mo`, color: C.slateLight },
-        ].map((kpi, i) => React.createElement("div", {
-          key: i,
-          className: "rounded-lg p-3",
-          style: { background: "rgba(255,255,255,0.05)" },
-        },
-          React.createElement("div", { className: "text-xs font-semibold uppercase tracking-wider mb-1", style: { color: C.slate } }, kpi.label),
-          React.createElement("div", { className: "text-xl font-bold", style: { color: kpi.color } }, kpi.value),
+      React.createElement("tbody", null,
+        COHORT_HEATMAP.map((row, ri) => React.createElement("tr", { key: ri },
+          React.createElement("td", {
+            className: "px-2 py-1 font-medium",
+            style: { color: T.text },
+          }, row.cohort),
+          React.createElement("td", {
+            className: "text-right px-1 py-1",
+            style: { color: T.textMuted },
+          }, row.size.toLocaleString()),
+          ...months.map(m => {
+            const val = row[`m${m}`];
+            return React.createElement("td", {
+              key: m,
+              className: "text-center py-1 rounded",
+              style: {
+                background: getColor(val),
+                color: val !== null ? "#fff" : "transparent",
+                fontWeight: 600,
+                fontSize: 10,
+                padding: "4px 2px",
+              },
+            }, val !== null ? `${val}%` : "");
+          }),
         )),
       ),
     ),
-
-    // Revenue at risk
-    React.createElement(Card, { className: "p-5 border-l-4 border-l-amber-400" },
-      React.createElement("div", { className: "flex items-start gap-3" },
-        React.createElement("div", { className: "text-2xl" }, "\u26A0\uFE0F"),
-        React.createElement("div", null,
-          React.createElement("div", { className: "font-bold text-slate-800" }, `${fmt(EXEC.revenueAtRisk)} ARR at risk`),
-          React.createElement("p", { className: "text-sm text-slate-500 mt-1" },
-            `${EXEC.atRiskCustomers} active customers on monthly billing with ≤1 add-on and ≤6 months tenure. These are the highest churn-probability accounts.`,
-          ),
-        ),
-      ),
-    ),
-
-    // Recommendations
-    React.createElement(SectionTitle, { children: "Strategic Recommendations" }),
-    React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4" },
-      RECOMMENDATIONS.map((rec, i) => React.createElement(Card, { key: i, className: "p-5" },
-        React.createElement("div", { className: "flex items-center gap-2 mb-2" },
-          React.createElement("span", {
-            className: "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white",
-            style: { background: [C.rose, C.amber, C.green, C.blue][i] },
-          }, rec.priority),
-          React.createElement("span", { className: "text-sm font-bold text-slate-700" }, rec.area),
-          React.createElement("span", {
-            className: `ml-auto px-2 py-0.5 rounded text-xs font-medium ${
-              rec.effort === "Low" ? "bg-green-50 text-green-700" :
-              rec.effort === "Medium" ? "bg-amber-50 text-amber-700" : "bg-red-50 text-red-700"
-            }`,
-          }, rec.effort),
-        ),
-        React.createElement("p", { className: "text-sm text-slate-600 mb-2" }, rec.action),
-        React.createElement("p", { className: "text-xs text-slate-400" }, rec.impact),
-      )),
-    ),
-  );
-}
-
-// ─── Tab: Cohort Retention ──────────────────────────────────────────────────
-function CohortRetention() {
-  return React.createElement("div", { className: "space-y-6" },
-    React.createElement(SectionTitle, {
-      children: "Retention Curve",
-      sub: "What percentage of customers survive to month M",
-    }),
-    React.createElement(Card, { className: "p-5" },
-      React.createElement(ResponsiveContainer, { width: "100%", height: 320 },
-        React.createElement(AreaChart, { data: RETENTION_CURVE },
-          React.createElement(CartesianGrid, { strokeDasharray: "3 3", stroke: "#E2E8F0" }),
-          React.createElement(XAxis, { dataKey: "month", tick: { fontSize: 12, fill: C.slate }, label: { value: "Months since signup", position: "insideBottom", offset: -5, fontSize: 12, fill: C.slate } }),
-          React.createElement(YAxis, { tick: { fontSize: 12, fill: C.slate }, domain: [0, 100], tickFormatter: v => `${v}%` }),
-          React.createElement(Tooltip, { formatter: v => [`${v}%`, "Retained"] }),
-          React.createElement(Area, { type: "monotone", dataKey: "pct", stroke: C.blue, fill: C.blue, fillOpacity: 0.15, strokeWidth: 2 }),
-        ),
-      ),
-    ),
-
-    React.createElement(SectionTitle, {
-      children: "Retention by Billing Cycle",
-      sub: "Annual and 2-year contracts retain dramatically better",
-    }),
-    React.createElement(Card, { className: "p-5" },
-      React.createElement(ResponsiveContainer, { width: "100%", height: 320 },
-        React.createElement(LineChart, { data: RETENTION_BY_BILLING },
-          React.createElement(CartesianGrid, { strokeDasharray: "3 3", stroke: "#E2E8F0" }),
-          React.createElement(XAxis, { dataKey: "month", tick: { fontSize: 12, fill: C.slate } }),
-          React.createElement(YAxis, { tick: { fontSize: 12, fill: C.slate }, domain: [0, 100], tickFormatter: v => `${v}%` }),
-          React.createElement(Tooltip, { formatter: (v, name) => [`${v}%`, name] }),
-          React.createElement(Legend, null),
-          React.createElement(Line, { type: "monotone", dataKey: "Monthly", stroke: C.rose, strokeWidth: 2, dot: { r: 3 } }),
-          React.createElement(Line, { type: "monotone", dataKey: "Annual", stroke: C.blue, strokeWidth: 2, dot: { r: 3 } }),
-          React.createElement(Line, { type: "monotone", dataKey: "2-Year", stroke: C.green, strokeWidth: 2, dot: { r: 3 } }),
-        ),
-      ),
-    ),
-
-    React.createElement(SectionTitle, {
-      children: "Churn Timing",
-      sub: "When do customers churn? Early churn is the #1 problem.",
-    }),
-    React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-4" },
-      CHURN_BY_TENURE.map((d, i) => React.createElement(Card, { key: i, className: "p-5 text-center" },
-        React.createElement("div", { className: "text-xs font-semibold text-slate-400 uppercase mb-1" }, d.period),
+    React.createElement("div", {
+      className: "flex items-center gap-2 mt-3 text-[10px]",
+      style: { color: T.textMuted },
+    },
+      React.createElement("span", null, "Retention %:"),
+      ...[
+        { label: ">80%", color: "#166534" },
+        { label: "65-80%", color: "#15803d" },
+        { label: "55-65%", color: "#a16207" },
+        { label: "45-55%", color: "#b45309" },
+        { label: "35-45%", color: "#c2410c" },
+        { label: "<35%", color: "#991b1b" },
+      ].map((item, i) => React.createElement("div", {
+        key: i,
+        className: "flex items-center gap-1",
+      },
         React.createElement("div", {
-          className: "text-3xl font-bold",
-          style: { color: d.rate > 40 ? C.rose : d.rate > 25 ? C.amber : C.green },
-        }, `${d.rate}%`),
-        React.createElement("div", { className: "text-sm text-slate-500 mt-1" }, `of churned customers`),
+          className: "w-3 h-3 rounded-sm",
+          style: { background: item.color },
+        }),
+        React.createElement("span", null, item.label),
       )),
-    ),
-
-    React.createElement(Card, { className: "p-5 border-l-4 border-l-rose-400" },
-      React.createElement("p", { className: "text-sm text-slate-600" },
-        React.createElement("strong", null, "Key insight: "),
-        "56% of all churn happens in the first 3 months. This is the critical window. A structured onboarding program targeting month-to-month subscribers could reduce early churn by 20–30% and save ~$190K ARR annually.",
-      ),
     ),
   );
 }
 
-// ─── Tab: LTV Deep Dive ─────────────────────────────────────────────────────
-function LtvDeepDive() {
-  const planChartData = LTV_BY_PLAN.map(p => ({
-    ...p,
-    label: p.segment,
-  }));
+// ─── MRR Waterfall ──────────────────────────────────────────────────────────
+function MrrWaterfall() {
+  return React.createElement(ResponsiveContainer, { width: "100%", height: 300 },
+    React.createElement(ComposedChart, { data: MRR_WATERFALL },
+      React.createElement(CartesianGrid, { strokeDasharray: "3 3", stroke: T.border }),
+      React.createElement(XAxis, { dataKey: "month", tick: { fontSize: 11, fill: T.textMuted } }),
+      React.createElement(YAxis, {
+        tick: { fontSize: 11, fill: T.textMuted },
+        tickFormatter: v => v >= 1000 ? `$${(v/1000).toFixed(0)}K` : `$${v}`,
+      }),
+      React.createElement(Tooltip, {
+        contentStyle: { background: T.surface, border: `1px solid ${T.border}`, borderRadius: 8, fontSize: 12 },
+        labelStyle: { color: T.text },
+        formatter: (v, name) => [`$${v.toLocaleString()}`, name],
+      }),
+      React.createElement(Legend, { wrapperStyle: { fontSize: 11, color: T.textMuted } }),
+      React.createElement(Bar, { dataKey: "newMrr", name: "New MRR", stackId: "pos", fill: T.green, radius: [2, 2, 0, 0], barSize: 24 }),
+      React.createElement(Bar, { dataKey: "expansion", name: "Expansion", stackId: "pos", fill: T.cyan, radius: [2, 2, 0, 0] }),
+      React.createElement(Bar, { dataKey: "contraction", name: "Contraction", stackId: "neg", fill: T.amber, radius: [0, 0, 2, 2] }),
+      React.createElement(Bar, { dataKey: "churn", name: "Churned", stackId: "neg", fill: T.rose, radius: [0, 0, 2, 2] }),
+      React.createElement(Line, { type: "monotone", dataKey: "net", name: "Net New", stroke: "#fff", strokeWidth: 2, dot: { fill: "#fff", r: 3 } }),
+    ),
+  );
+}
 
-  return React.createElement("div", { className: "space-y-6" },
-    React.createElement(SectionTitle, {
-      children: "LTV by Plan Tier",
-      sub: "Business plan has highest LTV but also highest absolute churn — retention is the lever",
-    }),
-    React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-4" },
-      LTV_BY_PLAN.map((p, i) => {
-        const colors = [C.blue, C.purple, C.green];
-        return React.createElement(Card, { key: i, className: "p-5" },
-          React.createElement("div", { className: "text-sm font-bold text-slate-700 mb-3" }, p.segment),
-          React.createElement("div", { className: "space-y-2" },
-            React.createElement("div", { className: "flex justify-between" },
-              React.createElement("span", { className: "text-xs text-slate-400" }, "LTV"),
-              React.createElement("span", { className: "text-sm font-bold", style: { color: colors[i] } }, fmt(p.ltv)),
-            ),
-            React.createElement("div", { className: "flex justify-between" },
-              React.createElement("span", { className: "text-xs text-slate-400" }, "ARPU"),
-              React.createElement("span", { className: "text-sm font-semibold text-slate-700" }, `$${p.arpu}/mo`),
-            ),
-            React.createElement("div", { className: "flex justify-between" },
-              React.createElement("span", { className: "text-xs text-slate-400" }, "CAC"),
-              React.createElement("span", { className: "text-sm font-semibold text-slate-700" }, fmt(p.avgCac)),
-            ),
-            React.createElement("div", { className: "flex justify-between" },
-              React.createElement("span", { className: "text-xs text-slate-400" }, "LTV:CAC"),
-              React.createElement("span", { className: "text-sm font-bold", style: { color: colors[i] } }, `${p.ltvCacRatio}x`),
-            ),
-            React.createElement("div", { className: "flex justify-between" },
-              React.createElement("span", { className: "text-xs text-slate-400" }, "Payback"),
-              React.createElement("span", { className: "text-sm text-slate-600" }, `${p.paybackMonths} mo`),
-            ),
-            React.createElement("div", { className: "flex justify-between" },
-              React.createElement("span", { className: "text-xs text-slate-400" }, "Churn Rate"),
-              React.createElement("span", { className: "text-sm text-slate-600" }, `${(p.churnRate * 100).toFixed(1)}%`),
-            ),
-          ),
-        );
+// ─── Benchmark Gauge ────────────────────────────────────────────────────────
+function BenchmarkBar({ label, value, unit, good, great, orbit, invert }) {
+  const maxVal = invert ? good * 1.5 : great * 1.5;
+  const goodPct = (good / maxVal) * 100;
+  const greatPct = (great / maxVal) * 100;
+  const orbitPct = Math.min((orbit / maxVal) * 100, 98);
+
+  const isGood = invert ? orbit <= good : orbit >= good;
+  const isGreat = invert ? orbit <= great : orbit >= great;
+  const color = isGreat ? T.green : isGood ? T.amber : T.rose;
+
+  return React.createElement("div", { className: "mb-4" },
+    React.createElement("div", { className: "flex justify-between mb-1" },
+      React.createElement("span", { className: "text-xs font-medium", style: { color: T.text } }, label),
+      React.createElement("span", { className: "text-xs font-bold", style: { color } }, `${value}${unit}`),
+    ),
+    React.createElement("div", {
+      className: "h-2 rounded-full relative overflow-hidden",
+      style: { background: T.border },
+    },
+      React.createElement("div", {
+        className: "h-full rounded-full transition-all",
+        style: { width: `${orbitPct}%`, background: color },
+      }),
+      React.createElement("div", {
+        className: "absolute top-0 h-full border-r-2 border-dashed",
+        style: { left: `${goodPct}%`, borderColor: T.textDim },
+      }),
+      React.createElement("div", {
+        className: "absolute top-0 h-full border-r-2",
+        style: { left: `${greatPct}%`, borderColor: T.textMuted },
+      }),
+    ),
+    React.createElement("div", { className: "flex justify-between mt-0.5" },
+      React.createElement("span", { className: "text-[9px]", style: { color: T.textDim } }, ""),
+      React.createElement("span", { className: "text-[9px]", style: { color: T.textDim, marginLeft: `${goodPct - 5}%` } }, `Good: ${good}${unit}`),
+      React.createElement("span", { className: "text-[9px]", style: { color: T.textDim } }, `Best: ${great}${unit}`),
+    ),
+  );
+}
+
+// ─── Scenario Simulator ─────────────────────────────────────────────────────
+function Simulator() {
+  const [retentionLift, setRetentionLift] = React.useState(0);
+  const [annualConv, setAnnualConv] = React.useState(0);
+  const [cacReduction, setCacReduction] = React.useState(0);
+
+  // Base metrics
+  const baseChurn = 0.82;
+  const baseLtv = 2744;
+  const baseCac = 376;
+  const baseArr = 3803829;
+  const basePayback = 7.7;
+
+  // Computed impact
+  const newChurn = Math.max(0.1, baseChurn * (1 - retentionLift / 100));
+  const churnMultiplier = baseChurn / newChurn;
+  const annualEffect = 1 + (annualConv / 100) * 0.6;
+  const newLtv = Math.round(baseLtv * churnMultiplier * annualEffect);
+  const newCac = Math.round(baseCac * (1 - cacReduction / 100));
+  const newRatio = (newLtv / Math.max(newCac, 1)).toFixed(1);
+  const newPayback = (newCac / KPI.arpu).toFixed(1);
+  const arrImpact = Math.round(baseArr * (churnMultiplier * annualEffect - 1));
+  const cacSavings = Math.round(KPI.totalAcqSpend * (cacReduction / 100));
+
+  function Slider({ label, value, onChange, min, max, step, unit, color }) {
+    return React.createElement("div", { className: "mb-5" },
+      React.createElement("div", { className: "flex justify-between mb-2" },
+        React.createElement("span", { className: "text-xs font-medium", style: { color: T.text } }, label),
+        React.createElement("span", {
+          className: "text-sm font-bold px-2 py-0.5 rounded",
+          style: { color, background: `${color}20` },
+        }, `${value > 0 ? "+" : ""}${value}${unit}`),
+      ),
+      React.createElement("input", {
+        type: "range", min, max, step, value,
+        onChange: e => onChange(Number(e.target.value)),
+        className: "w-full h-1.5 rounded-full appearance-none cursor-pointer",
+        style: {
+          background: `linear-gradient(to right, ${color} 0%, ${color} ${(value - min) / (max - min) * 100}%, ${T.border} ${(value - min) / (max - min) * 100}%, ${T.border} 100%)`,
+          accentColor: color,
+        },
+      }),
+    );
+  }
+
+  return React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-5" },
+    // Controls
+    React.createElement(Panel, null,
+      React.createElement("div", {
+        className: "text-xs font-semibold uppercase tracking-wider mb-4",
+        style: { color: T.textMuted },
+      }, "Adjust Levers"),
+      React.createElement(Slider, {
+        label: "Retention improvement",
+        value: retentionLift, onChange: setRetentionLift,
+        min: 0, max: 40, step: 5, unit: "%", color: T.green,
+      }),
+      React.createElement(Slider, {
+        label: "Monthly→Annual conversion lift",
+        value: annualConv, onChange: setAnnualConv,
+        min: 0, max: 50, step: 5, unit: "%", color: T.cyan,
+      }),
+      React.createElement(Slider, {
+        label: "CAC reduction (channel reallocation)",
+        value: cacReduction, onChange: setCacReduction,
+        min: 0, max: 30, step: 5, unit: "%", color: T.amber,
       }),
     ),
 
-    React.createElement(SectionTitle, {
-      children: "LTV Distribution",
-      sub: "Wide spread indicates opportunity for segmented retention strategies",
-    }),
-    React.createElement(Card, { className: "p-5" },
-      React.createElement("div", { className: "flex flex-wrap gap-4 mb-4" },
-        Object.entries(LTV_PERCENTILES).map(([k, v]) => React.createElement("div", { key: k, className: "text-center" },
-          React.createElement("div", { className: "text-xs text-slate-400 uppercase" }, k === "mean" ? "Mean" : k.toUpperCase()),
-          React.createElement("div", { className: "text-sm font-bold text-slate-700" }, fmt(v)),
+    // Results
+    React.createElement(Panel, null,
+      React.createElement("div", {
+        className: "text-xs font-semibold uppercase tracking-wider mb-4",
+        style: { color: T.textMuted },
+      }, "Projected Impact"),
+      React.createElement("div", { className: "grid grid-cols-2 gap-3" },
+        ...[
+          { label: "New LTV", now: fmt(baseLtv), proj: fmt(newLtv), delta: newLtv - baseLtv, prefix: "$" },
+          { label: "New CAC", now: fmt(baseCac), proj: fmt(newCac), delta: -(baseCac - newCac), prefix: "$" },
+          { label: "LTV:CAC", now: `${(baseLtv/baseCac).toFixed(1)}x`, proj: `${newRatio}x`, delta: (newRatio - baseLtv/baseCac).toFixed(1), suffix: "x" },
+          { label: "Payback", now: `${basePayback} mo`, proj: `${newPayback} mo`, delta: -(basePayback - newPayback).toFixed(1), suffix: " mo" },
+        ].map((m, i) => React.createElement("div", {
+          key: i,
+          className: "rounded-lg p-3",
+          style: { background: T.surfaceAlt, border: `1px solid ${T.border}` },
+        },
+          React.createElement("div", { className: "text-[10px] uppercase tracking-wider mb-1", style: { color: T.textMuted } }, m.label),
+          React.createElement("div", { className: "text-lg font-bold", style: { color: T.text } }, m.proj),
+          React.createElement("div", {
+            className: "text-[10px] mt-0.5",
+            style: { color: m.delta > 0 && m.label !== "New CAC" ? T.green : m.delta < 0 && m.label === "New CAC" ? T.green : T.textDim },
+          }, `was ${m.now}`),
         )),
       ),
+      // Total impact
+      (retentionLift > 0 || annualConv > 0 || cacReduction > 0) &&
       React.createElement("div", {
-        className: "h-3 rounded-full overflow-hidden flex",
-        style: { background: "#E2E8F0" },
+        className: "mt-4 rounded-lg p-3 border",
+        style: { background: `${T.green}10`, borderColor: `${T.green}30` },
       },
-        React.createElement("div", { style: { width: `${LTV_PERCENTILES.p25 / LTV_PERCENTILES.p90 * 100}%`, background: C.rose, opacity: 0.6 } }),
-        React.createElement("div", { style: { width: `${(LTV_PERCENTILES.p50 - LTV_PERCENTILES.p25) / LTV_PERCENTILES.p90 * 100}%`, background: C.amber, opacity: 0.6 } }),
-        React.createElement("div", { style: { width: `${(LTV_PERCENTILES.p75 - LTV_PERCENTILES.p50) / LTV_PERCENTILES.p90 * 100}%`, background: C.green, opacity: 0.6 } }),
-        React.createElement("div", { style: { width: `${(LTV_PERCENTILES.p90 - LTV_PERCENTILES.p75) / LTV_PERCENTILES.p90 * 100}%`, background: C.blue, opacity: 0.6 } }),
-      ),
-      React.createElement("div", { className: "flex justify-between mt-1 text-xs text-slate-400" },
-        React.createElement("span", null, fmt(LTV_PERCENTILES.p10)),
-        React.createElement("span", null, fmt(LTV_PERCENTILES.p90)),
-      ),
-    ),
-
-    React.createElement(SectionTitle, {
-      children: "The Annual Conversion Opportunity",
-      sub: "Billing cycle is the single biggest predictor of LTV",
-    }),
-    React.createElement(Card, { className: "p-5" },
-      React.createElement(ResponsiveContainer, { width: "100%", height: 280 },
-        React.createElement(BarChart, { data: LTV_BY_BILLING, layout: "vertical" },
-          React.createElement(CartesianGrid, { strokeDasharray: "3 3", stroke: "#E2E8F0" }),
-          React.createElement(YAxis, { dataKey: "segment", type: "category", tick: { fontSize: 13, fill: C.slate }, width: 80 }),
-          React.createElement(XAxis, { type: "number", tick: { fontSize: 12, fill: C.slate }, tickFormatter: v => v >= 1000 ? `$${(v/1000).toFixed(0)}K` : `$${v}` }),
-          React.createElement(Tooltip, { formatter: (v) => [`$${v.toLocaleString()}`, "LTV"] }),
-          React.createElement(Bar, { dataKey: "ltv", radius: [0, 6, 6, 0], barSize: 28 },
-            LTV_BY_BILLING.map((d, i) => React.createElement(Cell, { key: i, fill: [C.rose, C.blue, C.green][i] })),
-          ),
+        React.createElement("div", { className: "text-xs font-semibold mb-1", style: { color: T.green } }, "Combined Impact"),
+        React.createElement("div", { className: "text-sm", style: { color: T.text } },
+          arrImpact > 0 ? `+${fmt(arrImpact)} incremental ARR` : "",
+          cacSavings > 0 ? ` · ${fmt(cacSavings)} CAC savings` : "",
+          (arrImpact <= 0 && cacSavings <= 0) ? "Adjust sliders to see projected impact" : "",
         ),
       ),
     ),
   );
 }
 
-// ─── Tab: Channel Economics ─────────────────────────────────────────────────
-function ChannelEconomics() {
-  const bubbleData = CHANNELS.map(ch => ({
-    x: ch.avgCac,
-    y: ch.avgLtv,
-    z: ch.customers,
-    name: ch.channel,
-    ratio: ch.ltvCacRatio,
+// ─── Channel Scatter Plot (CAC vs LTV) ──────────────────────────────────────
+function ChannelBubble() {
+  const data = CHANNELS.map(ch => ({
+    name: ch.ch,
+    cac: ch.cac,
+    ltv: ch.ltv,
+    customers: ch.cust,
+    ratio: ch.ratio,
   }));
 
-  return React.createElement("div", { className: "space-y-6" },
-    React.createElement(SectionTitle, {
-      children: "Channel Performance",
-      sub: "Sorted by LTV:CAC efficiency — your best channels deserve more budget",
-    }),
-
-    // Channel cards
-    React.createElement("div", { className: "space-y-3" },
-      CHANNELS.map((ch, i) => React.createElement(Card, { key: i, className: "p-4" },
-        React.createElement("div", { className: "flex flex-wrap items-center gap-4" },
-          React.createElement("div", { className: "flex items-center gap-3 min-w-[180px]" },
-            React.createElement("div", {
-              className: "w-3 h-3 rounded-full flex-shrink-0",
-              style: { background: CHANNEL_COLORS[ch.channel] || C.slate },
-            }),
-            React.createElement("div", null,
-              React.createElement("div", { className: "text-sm font-bold text-slate-700" }, ch.channel),
-              React.createElement("div", { className: "text-xs text-slate-400" }, `${ch.pctCustomers}% of customers`),
-            ),
-          ),
-          React.createElement("div", { className: "flex flex-wrap gap-6 items-center flex-1" },
-            React.createElement("div", { className: "text-center" },
-              React.createElement("div", { className: "text-xs text-slate-400" }, "CAC"),
-              React.createElement("div", { className: "text-sm font-bold text-slate-700" }, fmt(ch.avgCac)),
-            ),
-            React.createElement("div", { className: "text-center" },
-              React.createElement("div", { className: "text-xs text-slate-400" }, "LTV"),
-              React.createElement("div", { className: "text-sm font-bold text-slate-700" }, fmt(ch.avgLtv)),
-            ),
-            React.createElement("div", { className: "text-center" },
-              React.createElement("div", { className: "text-xs text-slate-400" }, "LTV:CAC"),
-              React.createElement("div", {
-                className: "text-sm font-bold",
-                style: { color: ch.ltvCacRatio >= 5 ? C.green : ch.ltvCacRatio >= 3 ? C.blue : C.rose },
-              }, `${ch.ltvCacRatio}x`),
-            ),
-            React.createElement("div", { className: "text-center" },
-              React.createElement("div", { className: "text-xs text-slate-400" }, "Payback"),
-              React.createElement("div", { className: "text-sm text-slate-600" }, `${ch.paybackMonths} mo`),
-            ),
-            React.createElement("div", { className: "text-center" },
-              React.createElement("div", { className: "text-xs text-slate-400" }, "ROI"),
-              React.createElement("div", { className: "text-sm font-bold", style: { color: C.green } }, `${ch.roi}%`),
-            ),
-          ),
-          React.createElement(HealthBadge, { health: ch.health }),
-        ),
+  return React.createElement("div", { className: "relative" },
+    React.createElement(ResponsiveContainer, { width: "100%", height: 340 },
+      React.createElement(ComposedChart, {
+        data,
+        margin: { top: 20, right: 30, bottom: 20, left: 20 },
+      },
+        React.createElement(CartesianGrid, { strokeDasharray: "3 3", stroke: T.border }),
+        React.createElement(XAxis, {
+          dataKey: "cac", type: "number", name: "CAC",
+          tick: { fontSize: 11, fill: T.textMuted },
+          label: { value: "CAC ($)", position: "bottom", offset: 0, fontSize: 11, fill: T.textMuted },
+          tickFormatter: v => `$${v}`,
+        }),
+        React.createElement(YAxis, {
+          dataKey: "ltv", type: "number", name: "LTV",
+          tick: { fontSize: 11, fill: T.textMuted },
+          label: { value: "LTV ($)", angle: -90, position: "insideLeft", offset: 10, fontSize: 11, fill: T.textMuted },
+          tickFormatter: v => v >= 1000 ? `$${(v/1000).toFixed(0)}K` : `$${v}`,
+        }),
+        React.createElement(Tooltip, {
+          contentStyle: { background: T.surface, border: `1px solid ${T.border}`, borderRadius: 8, fontSize: 12 },
+          formatter: (v, name) => {
+            if (name === "LTV") return [`$${v.toLocaleString()}`, "LTV"];
+            return [v, name];
+          },
+          labelFormatter: (_, payload) => payload[0] ? payload[0].payload.name : "",
+        }),
+        data.map((d, i) => React.createElement(ReferenceLine, {
+          key: `line-${i}`,
+          segment: [{ x: 0, y: 0 }, { x: d.cac, y: d.ltv }],
+          stroke: CHANNEL_C[d.name],
+          strokeDasharray: "3 3",
+          strokeOpacity: 0.3,
+        })),
+        React.createElement(Line, {
+          data: [{ cac: 0, ltv: 0 }, { cac: 800, ltv: 2400 }],
+          dataKey: "ltv", stroke: T.textDim, strokeDasharray: "8 4", strokeWidth: 1, dot: false,
+        }),
+        data.map((d, i) => {
+          const r = Math.sqrt(d.customers / 200) * 3 + 6;
+          return React.createElement("circle", {
+            key: i,
+            cx: `${((d.cac) / 900) * 100}%`,
+            cy: `${(1 - (d.ltv) / 4000) * 100}%`,
+            r,
+            fill: CHANNEL_C[d.name],
+            opacity: 0.8,
+            stroke: "#fff",
+            strokeWidth: 1.5,
+          });
+        }),
+      ),
+    ),
+    // Legend
+    React.createElement("div", {
+      className: "flex flex-wrap gap-3 mt-2 justify-center",
+    },
+      CHANNELS.map((ch, i) => React.createElement("div", {
+        key: i,
+        className: "flex items-center gap-1.5 text-[11px]",
+        style: { color: T.textMuted },
+      },
+        React.createElement("div", {
+          className: "w-2.5 h-2.5 rounded-full",
+          style: { background: CHANNEL_C[ch.ch] },
+        }),
+        React.createElement("span", null, ch.ch),
+        React.createElement("span", { className: "font-bold", style: { color: CHANNEL_C[ch.ch] } }, `${ch.ratio}x`),
       )),
     ),
+  );
+}
 
-    // LTV:CAC comparison chart
-    React.createElement(SectionTitle, {
-      children: "LTV:CAC by Channel",
-      sub: "Dashed line = 3x breakeven threshold",
-    }),
-    React.createElement(Card, { className: "p-5" },
-      React.createElement(ResponsiveContainer, { width: "100%", height: 300 },
-        React.createElement(ComposedChart, { data: CHANNELS },
-          React.createElement(CartesianGrid, { strokeDasharray: "3 3", stroke: "#E2E8F0" }),
-          React.createElement(XAxis, { dataKey: "channel", tick: { fontSize: 11, fill: C.slate }, angle: -20, textAnchor: "end", height: 60 }),
-          React.createElement(YAxis, { tick: { fontSize: 12, fill: C.slate }, label: { value: "LTV:CAC", angle: -90, position: "insideLeft", fontSize: 12, fill: C.slate } }),
-          React.createElement(Tooltip, null),
-          React.createElement(Bar, { dataKey: "ltvCacRatio", name: "LTV:CAC", radius: [6, 6, 0, 0], barSize: 36 },
-            CHANNELS.map((ch, i) => React.createElement(Cell, { key: i, fill: CHANNEL_COLORS[ch.channel] })),
-          ),
-          React.createElement(Line, { type: "monotone", dataKey: () => 3, stroke: C.rose, strokeDasharray: "8 4", strokeWidth: 1.5, dot: false, name: "3x threshold" }),
-        ),
-      ),
-    ),
-
-    // Budget reallocation
-    React.createElement(SectionTitle, {
-      children: "Budget Reallocation Opportunity",
-      sub: `Current total acquisition spend: ${fmt(EXEC.totalAcqSpend)}`,
-    }),
-    React.createElement(Card, { className: "p-5" },
-      React.createElement(ResponsiveContainer, { width: "100%", height: 300 },
-        React.createElement(BarChart, {
-          data: CHANNELS.map(ch => ({
-            channel: ch.channel,
-            Current: ch.currentPct,
-            Optimized: ch.optimizedPct,
-          })),
-          layout: "vertical",
-        },
-          React.createElement(CartesianGrid, { strokeDasharray: "3 3", stroke: "#E2E8F0" }),
-          React.createElement(YAxis, { dataKey: "channel", type: "category", tick: { fontSize: 12, fill: C.slate }, width: 120 }),
-          React.createElement(XAxis, { type: "number", tick: { fontSize: 12, fill: C.slate }, tickFormatter: v => `${v}%` }),
-          React.createElement(Tooltip, { formatter: (v) => [`${v}%`] }),
-          React.createElement(Legend, null),
-          React.createElement(Bar, { dataKey: "Current", fill: C.slate, opacity: 0.4, barSize: 14, radius: [0, 4, 4, 0] }),
-          React.createElement(Bar, { dataKey: "Optimized", fill: C.blue, barSize: 14, radius: [0, 4, 4, 0] }),
-        ),
-      ),
+// ─── Payback Curves ─────────────────────────────────────────────────────────
+function PaybackCurves() {
+  return React.createElement(ResponsiveContainer, { width: "100%", height: 300 },
+    React.createElement(LineChart, { data: PAYBACK_CURVES },
+      React.createElement(CartesianGrid, { strokeDasharray: "3 3", stroke: T.border }),
+      React.createElement(XAxis, {
+        dataKey: "month",
+        tick: { fontSize: 11, fill: T.textMuted },
+        label: { value: "Months", position: "bottom", offset: 0, fontSize: 11, fill: T.textMuted },
+      }),
+      React.createElement(YAxis, {
+        tick: { fontSize: 11, fill: T.textMuted },
+        tickFormatter: v => `${v}%`,
+        label: { value: "Cumulative Revenue / CAC", angle: -90, position: "insideLeft", offset: 10, fontSize: 10, fill: T.textMuted },
+      }),
+      React.createElement(Tooltip, {
+        contentStyle: { background: T.surface, border: `1px solid ${T.border}`, borderRadius: 8, fontSize: 12 },
+        formatter: (v, name) => [`${v}%`, name],
+      }),
+      React.createElement(ReferenceLine, { y: 100, stroke: "#fff", strokeDasharray: "8 4", strokeWidth: 1.5, label: { value: "Breakeven", position: "right", fill: T.textMuted, fontSize: 10 } }),
+      ...Object.keys(CHANNEL_C).map(ch => React.createElement(Line, {
+        key: ch,
+        type: "monotone",
+        dataKey: ch,
+        stroke: CHANNEL_C[ch],
+        strokeWidth: 2,
+        dot: false,
+      })),
     ),
   );
 }
 
 // ─── Main App ───────────────────────────────────────────────────────────────
 function App() {
-  const [tab, setTab] = React.useState("executive");
+  const [activeNav, setActiveNav] = React.useState("overview");
 
-  const tabs = [
-    { id: "executive", label: "Executive Briefing" },
-    { id: "retention", label: "Cohort Retention" },
-    { id: "ltv",       label: "LTV Deep Dive" },
-    { id: "channels",  label: "Channel Economics" },
+  const navItems = [
+    { id: "overview", icon: "\u25A0", label: "Overview" },
+    { id: "cohorts", icon: "\u2593", label: "Cohorts" },
+    { id: "channels", icon: "\u25CE", label: "Channels" },
+    { id: "simulator", icon: "\u2699", label: "Simulator" },
   ];
 
-  return React.createElement("div", { className: "min-h-screen", style: { background: C.bg } },
-    // Header
+  return React.createElement("div", {
+    className: "min-h-screen",
+    style: { background: T.bg, color: T.text },
+  },
+    // Top bar
     React.createElement("header", {
-      className: "bg-white border-b border-slate-200 shadow-sm",
+      className: "border-b sticky top-0 z-20",
+      style: { background: T.bg, borderColor: T.border },
     },
-      React.createElement("div", { className: "max-w-6xl mx-auto px-4 py-5" },
-        React.createElement("div", { className: "text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1" }, "LTV / CAC MODELING"),
-        React.createElement("h1", { className: "text-2xl sm:text-3xl font-bold text-slate-800" }, "Customer Unit Economics"),
-        React.createElement("p", { className: "text-sm text-slate-500 mt-1" }, "Orbit · B2B SaaS · Jan 2023 – Dec 2024"),
-      ),
-    ),
-
-    // Tabs
-    React.createElement("div", { className: "bg-white border-b border-slate-200 sticky top-0 z-10" },
-      React.createElement("div", {
-        className: "max-w-6xl mx-auto px-4 flex gap-0 overflow-x-auto",
-        style: { WebkitOverflowScrolling: "touch" },
-      },
-        tabs.map(t => React.createElement("button", {
-          key: t.id,
-          onClick: () => setTab(t.id),
-          className: `px-4 py-3 text-xs md:text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-            tab === t.id
-              ? "border-slate-800 text-slate-800"
-              : "border-transparent text-slate-400 hover:text-slate-600"
-          }`,
-        }, t.label)),
-        React.createElement("div", { style: { minWidth: 20, flexShrink: 0 } }),
+      React.createElement("div", { className: "max-w-7xl mx-auto px-4 py-3 flex items-center justify-between" },
+        React.createElement("div", null,
+          React.createElement("div", { className: "flex items-center gap-2" },
+            React.createElement("div", {
+              className: "w-2 h-2 rounded-full",
+              style: { background: T.green },
+            }),
+            React.createElement("span", {
+              className: "text-[10px] font-semibold uppercase tracking-widest",
+              style: { color: T.textMuted },
+            }, "Orbit SaaS · Unit Economics"),
+          ),
+          React.createElement("h1", { className: "text-xl font-bold mt-0.5" }, "LTV / CAC Command Center"),
+        ),
+        // Nav pills
+        React.createElement("nav", { className: "flex gap-1" },
+          navItems.map(item => React.createElement("button", {
+            key: item.id,
+            onClick: () => setActiveNav(item.id),
+            className: `px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+              activeNav === item.id ? "" : "hover:opacity-80"
+            }`,
+            style: {
+              background: activeNav === item.id ? T.accent : "transparent",
+              color: activeNav === item.id ? "#fff" : T.textMuted,
+            },
+          }, `${item.icon} ${item.label}`)),
+        ),
       ),
     ),
 
     // Content
-    React.createElement("main", { className: "max-w-6xl mx-auto px-4 py-6" },
-      tab === "executive" && React.createElement(ExecutiveBriefing),
-      tab === "retention" && React.createElement(CohortRetention),
-      tab === "ltv"       && React.createElement(LtvDeepDive),
-      tab === "channels"  && React.createElement(ChannelEconomics),
+    React.createElement("main", { className: "max-w-7xl mx-auto px-4 py-6" },
+
+      // ── Overview ──
+      activeNav === "overview" && React.createElement(React.Fragment, null,
+        // KPI row
+        React.createElement("div", { className: "grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 mb-8" },
+          React.createElement(MetricCard, { label: "ARR", value: fmt(KPI.arr), small: true }),
+          React.createElement(MetricCard, { label: "MRR", value: fmt(KPI.mrr), trend: 4.2, small: true }),
+          React.createElement(MetricCard, { label: "Active", value: KPI.active.toLocaleString(), small: true }),
+          React.createElement(MetricCard, { label: "ARPU", value: `$${KPI.arpu}`, small: true }),
+          React.createElement(MetricCard, { label: "LTV:CAC", value: `${KPI.ltvCac}x`, small: true }),
+          React.createElement(MetricCard, { label: "Payback", value: `${KPI.payback}mo`, small: true }),
+          React.createElement(MetricCard, { label: "Churn", value: `${KPI.monthlyChurn}%`, sub: "monthly", small: true }),
+          React.createElement(MetricCard, { label: "NRR", value: `${KPI.nrr}%`, small: true }),
+        ),
+
+        // Benchmark context
+        React.createElement(Section, {
+          title: "Where Orbit Stands",
+          sub: "Compared to B2B SaaS benchmarks (dashed = good, solid = best-in-class)",
+        },
+          React.createElement(Panel, null,
+            React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-x-8" },
+              React.createElement(BenchmarkBar, { label: "LTV:CAC Ratio", value: "7.3", unit: "x", good: 3, great: 5, orbit: 7.3 }),
+              React.createElement(BenchmarkBar, { label: "Payback Period", value: "7.7", unit: " mo", good: 18, great: 12, orbit: 7.7, invert: true }),
+              React.createElement(BenchmarkBar, { label: "Monthly Churn", value: "0.82", unit: "%", good: 3, great: 1.5, orbit: 0.82, invert: true }),
+              React.createElement(BenchmarkBar, { label: "Net Revenue Retention", value: "94.2", unit: "%", good: 100, great: 120, orbit: 94.2 }),
+            ),
+          ),
+        ),
+
+        // MRR Waterfall
+        React.createElement(Section, {
+          title: "MRR Movement",
+          sub: "Monthly revenue dynamics: new ARR vs expansion vs contraction vs churn",
+        },
+          React.createElement(Panel, null,
+            React.createElement(MrrWaterfall),
+          ),
+        ),
+
+        // Key insight
+        React.createElement("div", {
+          className: "rounded-lg p-5 border",
+          style: { background: `${T.accent}08`, borderColor: `${T.accent}30` },
+        },
+          React.createElement("div", { className: "text-xs font-semibold uppercase tracking-wider mb-2", style: { color: T.accent } }, "So What?"),
+          React.createElement("p", { className: "text-sm leading-relaxed", style: { color: T.text } },
+            "Orbit's unit economics are healthy on paper — ",
+            React.createElement("strong", null, "7.3x LTV:CAC"),
+            " and ",
+            React.createElement("strong", null, "7.7-month payback"),
+            " beat most B2B SaaS benchmarks. But two problems hide under the surface: ",
+            React.createElement("strong", { style: { color: T.rose } }, "NRR is below 100%"),
+            " (meaning existing customers shrink over time), and ",
+            React.createElement("strong", { style: { color: T.amber } }, "55% of acquisition spend"),
+            " goes to the two least efficient channels. The real opportunity isn't acquiring more — it's retaining better and spending smarter.",
+          ),
+        ),
+      ),
+
+      // ── Cohorts ──
+      activeNav === "cohorts" && React.createElement(React.Fragment, null,
+        React.createElement(Section, {
+          title: "Cohort Retention Heatmap",
+          sub: "Quarterly cohorts, monthly retention — the canonical SaaS health check",
+        },
+          React.createElement(Panel, null,
+            React.createElement(CohortHeatmap),
+          ),
+        ),
+
+        // Interpretation
+        React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-4 mb-8" },
+          React.createElement(Panel, null,
+            React.createElement("div", { className: "text-xs font-semibold uppercase tracking-wider mb-2", style: { color: T.rose } }, "The Problem"),
+            React.createElement("div", { className: "text-2xl font-bold mb-1", style: { color: T.text } }, "18–35%"),
+            React.createElement("p", { className: "text-xs", style: { color: T.textMuted } }, "of each cohort churns in the first 3 months. This early-life attrition is the #1 drag on LTV."),
+          ),
+          React.createElement(Panel, null,
+            React.createElement("div", { className: "text-xs font-semibold uppercase tracking-wider mb-2", style: { color: T.green } }, "The Good News"),
+            React.createElement("div", { className: "text-2xl font-bold mb-1", style: { color: T.text } }, "Q3→Q4 2024"),
+            React.createElement("p", { className: "text-xs", style: { color: T.textMuted } }, "Recent cohorts show improving M1 retention (87→88%), suggesting product or onboarding changes are working."),
+          ),
+          React.createElement(Panel, null,
+            React.createElement("div", { className: "text-xs font-semibold uppercase tracking-wider mb-2", style: { color: T.amber } }, "The Lever"),
+            React.createElement("div", { className: "text-2xl font-bold mb-1", style: { color: T.text } }, "M1 → M3"),
+            React.createElement("p", { className: "text-xs", style: { color: T.textMuted } }, "The steepest drop. A 5pp improvement in M1–M3 retention would add ~$380K ARR annually."),
+          ),
+        ),
+
+        // Retention by billing
+        React.createElement(Section, {
+          title: "The Billing Cycle Effect",
+          sub: "Annual contracts don't just lock in revenue — they fundamentally change retention behavior",
+        },
+          React.createElement(Panel, null,
+            React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-4 mb-5" },
+              [
+                { label: "Monthly", churn: "42.7%", m12: "50.8%", color: T.rose },
+                { label: "Annual", churn: "11.3%", m12: "93.1%", color: T.accent },
+                { label: "2-Year", churn: "2.8%", m12: "96.5%", color: T.green },
+              ].map((d, i) => React.createElement("div", {
+                key: i,
+                className: "rounded-lg p-4 text-center border",
+                style: { borderColor: `${d.color}40`, background: `${d.color}08` },
+              },
+                React.createElement("div", { className: "text-sm font-bold mb-1", style: { color: d.color } }, d.label),
+                React.createElement("div", { className: "text-2xl font-bold", style: { color: T.text } }, d.m12),
+                React.createElement("div", { className: "text-[10px]", style: { color: T.textMuted } }, "12-month retention"),
+              )),
+            ),
+          ),
+        ),
+      ),
+
+      // ── Channels ──
+      activeNav === "channels" && React.createElement(React.Fragment, null,
+        React.createElement(Section, {
+          title: "Channel Economics: CAC vs LTV",
+          sub: "Each dot = one acquisition channel. Size = customer volume. Dashed line = 3x breakeven.",
+        },
+          React.createElement(Panel, null,
+            React.createElement(ChannelBubble),
+          ),
+        ),
+
+        // Channel table
+        React.createElement(Section, { title: "Channel Breakdown" },
+          React.createElement(Panel, null,
+            React.createElement("div", { className: "overflow-x-auto" },
+              React.createElement("table", {
+                className: "w-full text-xs",
+                style: { minWidth: 650 },
+              },
+                React.createElement("thead", null,
+                  React.createElement("tr", { style: { borderBottom: `1px solid ${T.border}` } },
+                    ["Channel", "Customers", "CAC", "LTV", "LTV:CAC", "Payback", "Churn", "Health"].map(h =>
+                      React.createElement("th", {
+                        key: h,
+                        className: `text-left py-2 px-2 font-semibold ${h !== "Channel" ? "text-right" : ""}`,
+                        style: { color: T.textMuted },
+                      }, h),
+                    ),
+                  ),
+                ),
+                React.createElement("tbody", null,
+                  CHANNELS.map((ch, i) => React.createElement("tr", {
+                    key: i,
+                    style: { borderBottom: `1px solid ${T.border}` },
+                  },
+                    React.createElement("td", { className: "py-2.5 px-2" },
+                      React.createElement("div", { className: "flex items-center gap-2" },
+                        React.createElement("div", {
+                          className: "w-2 h-2 rounded-full",
+                          style: { background: CHANNEL_C[ch.ch] },
+                        }),
+                        React.createElement("span", { className: "font-medium", style: { color: T.text } }, ch.ch),
+                      ),
+                    ),
+                    React.createElement("td", { className: "text-right py-2 px-2", style: { color: T.textMuted } }, ch.cust.toLocaleString()),
+                    React.createElement("td", { className: "text-right py-2 px-2 font-medium", style: { color: T.text } }, `$${ch.cac}`),
+                    React.createElement("td", { className: "text-right py-2 px-2 font-medium", style: { color: T.text } }, `$${ch.ltv.toLocaleString()}`),
+                    React.createElement("td", {
+                      className: "text-right py-2 px-2 font-bold",
+                      style: { color: ch.ratio >= 5 ? T.green : ch.ratio >= 3 ? T.amber : T.rose },
+                    }, `${ch.ratio}x`),
+                    React.createElement("td", { className: "text-right py-2 px-2", style: { color: T.textMuted } }, `${ch.payback} mo`),
+                    React.createElement("td", { className: "text-right py-2 px-2", style: { color: T.textMuted } }, `${ch.churn}%`),
+                    React.createElement("td", { className: "text-right py-2 px-2" },
+                      React.createElement("span", {
+                        className: "px-2 py-0.5 rounded-full text-[10px] font-semibold",
+                        style: {
+                          color: ch.health === "Scale" ? T.green : ch.health === "Healthy" ? T.accent : T.amber,
+                          background: ch.health === "Scale" ? `${T.green}15` : ch.health === "Healthy" ? `${T.accent}15` : `${T.amber}15`,
+                        },
+                      }, ch.health),
+                    ),
+                  )),
+                ),
+              ),
+            ),
+          ),
+        ),
+
+        // Payback curves
+        React.createElement(Section, {
+          title: "Time to Payback",
+          sub: "How quickly each channel earns back its CAC. White dashed line = breakeven (100%).",
+        },
+          React.createElement(Panel, null,
+            React.createElement(PaybackCurves),
+          ),
+        ),
+
+        // Reallocation
+        React.createElement("div", {
+          className: "rounded-lg p-5 border",
+          style: { background: `${T.green}08`, borderColor: `${T.green}30` },
+        },
+          React.createElement("div", { className: "text-xs font-semibold uppercase tracking-wider mb-2", style: { color: T.green } }, "Recommendation"),
+          React.createElement("p", { className: "text-sm leading-relaxed", style: { color: T.text } },
+            "Organic Search, Content, and Referral deliver ",
+            React.createElement("strong", null, "11–14x LTV:CAC"),
+            " and pay back in under 4 months. Yet they receive only 33% of acquisition spend. ",
+            "Shifting 15–20% of budget from Paid Social & Partnerships to these channels would reduce blended CAC by ~$50 ",
+            "and improve overall LTV:CAC from 7.3x to ~9.5x — ",
+            React.createElement("strong", null, "without sacrificing customer volume"),
+            " (organic channels are not capacity-constrained at current spend levels).",
+          ),
+        ),
+      ),
+
+      // ── Simulator ──
+      activeNav === "simulator" && React.createElement(React.Fragment, null,
+        React.createElement(Section, {
+          title: "Growth Scenario Simulator",
+          sub: "Drag the sliders to model different growth strategies and see projected impact on unit economics",
+        },
+          React.createElement(Simulator),
+        ),
+
+        React.createElement(Section, {
+          title: "Pre-Built Scenarios",
+          sub: "Common strategies and their expected impact",
+        },
+          React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-4" },
+            [
+              {
+                name: "Retention-First",
+                desc: "Invest in onboarding & success team. Target: reduce M1-M3 churn by 25%.",
+                ltv: "$3,430", cac: "$376", ratio: "9.1x",
+                arr: "+$520K", cost: "$180K", roi: "2.9x",
+                color: T.green,
+              },
+              {
+                name: "Channel Rebalance",
+                desc: "Shift 20% of paid budget to organic & content. No headcount change.",
+                ltv: "$2,744", cac: "$310", ratio: "8.9x",
+                arr: "—", cost: "$0", roi: "immediate",
+                color: T.accent,
+              },
+              {
+                name: "Annual Push",
+                desc: "Offer month-3 annual discount + annual-first pricing on signup page.",
+                ltv: "$3,840", cac: "$376", ratio: "10.2x",
+                arr: "+$780K", cost: "$95K", roi: "8.2x",
+                color: T.cyan,
+              },
+            ].map((s, i) => React.createElement(Panel, { key: i },
+              React.createElement("div", {
+                className: "text-xs font-semibold uppercase tracking-wider mb-2",
+                style: { color: s.color },
+              }, s.name),
+              React.createElement("p", {
+                className: "text-xs mb-3",
+                style: { color: T.textMuted },
+              }, s.desc),
+              React.createElement("div", { className: "space-y-2" },
+                [
+                  { k: "Projected LTV", v: s.ltv },
+                  { k: "Projected CAC", v: s.cac },
+                  { k: "LTV:CAC", v: s.ratio },
+                  { k: "ARR Impact", v: s.arr },
+                  { k: "Investment", v: s.cost },
+                  { k: "ROI", v: s.roi },
+                ].map((row, j) => React.createElement("div", {
+                  key: j,
+                  className: "flex justify-between text-xs",
+                },
+                  React.createElement("span", { style: { color: T.textMuted } }, row.k),
+                  React.createElement("span", { className: "font-medium", style: { color: T.text } }, row.v),
+                )),
+              ),
+            )),
+          ),
+        ),
+      ),
     ),
 
     // Footer
-    React.createElement("footer", { className: "bg-white border-t border-slate-200 mt-8" },
-      React.createElement("div", { className: "max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-2 text-xs text-slate-400" },
+    React.createElement("footer", {
+      className: "border-t mt-8 py-4",
+      style: { borderColor: T.border },
+    },
+      React.createElement("div", {
+        className: "max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-2 text-[11px]",
+        style: { color: T.textDim },
+      },
         React.createElement("span", null,
           "Core data: ",
-          React.createElement("a", { href: "https://github.com/IBM/telco-customer-churn-on-icp4d", target: "_blank", className: "underline hover:text-slate-600" }, "IBM Telco Customer Churn"),
-          " (public dataset). Acquisition data simulated.",
+          React.createElement("a", {
+            href: "https://github.com/IBM/telco-customer-churn-on-icp4d",
+            target: "_blank",
+            className: "underline",
+            style: { color: T.textMuted },
+          }, "IBM Telco Customer Churn"),
+          " (public). Acquisition & MRR movement data simulated.",
         ),
         React.createElement("span", null,
           "Built by ",
-          React.createElement("a", { href: "https://linkedin.com/in/freena", target: "_blank", className: "underline hover:text-slate-600" }, "Freena Wang"),
+          React.createElement("a", {
+            href: "https://linkedin.com/in/freena",
+            target: "_blank",
+            className: "underline",
+            style: { color: T.textMuted },
+          }, "Freena Wang"),
         ),
       ),
     ),
