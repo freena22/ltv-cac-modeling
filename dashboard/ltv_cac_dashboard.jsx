@@ -11,36 +11,42 @@ const {
   ResponsiveContainer, Cell, ComposedChart, ReferenceLine,
 } = window.Recharts;
 
-// ─── Design tokens (muted, low-saturation palette) ─────────────────────────
+// ─── Design tokens — desaturated, high-contrast on dark ────────────────────
+// Ref: numerro.io dark-mode best practices — 4–5 contrasting colors,
+// no pure black, desaturated palette for legibility.
 const T = {
-  bg:         "#0B1120",
-  surface:    "#111827",
-  surfaceAlt: "#162031",
-  border:     "#1E293B",
-  borderHi:   "#334155",
-  text:       "#E2E8F0",
-  textSec:    "#94A3B8",
-  textMuted:  "#64748B",
-  textDim:    "#475569",
-  accent:     "#6B8FBF",
-  green:      "#5BA88A",
-  greenDim:   "#2D5A42",
-  amber:      "#BFA06B",
-  amberDim:   "#7A6028",
-  rose:       "#BF6B6B",
-  roseDim:    "#7A3A3A",
-  purple:     "#8B7BBF",
-  cyan:       "#5BA8B8",
-  pink:       "#BF6B8F",
+  bg:         "#0F1923",
+  surface:    "#15202E",
+  surfaceAlt: "#1A2940",
+  border:     "#233044",
+  borderHi:   "#334D6E",
+  text:       "#E8EDF2",
+  textSec:    "#9BAFC4",
+  textMuted:  "#6B839E",
+  textDim:    "#4E6680",
+  accent:     "#5AAFCA",
+  teal:       "#4ECDB4",
+  tealDim:    "#2A7A68",
+  gold:       "#D4A86A",
+  goldDim:    "#8A6B38",
+  lavender:   "#9B8EC4",
+  lavenderDim:"#5E4F8A",
+  slate:      "#7A91A8",
+  green:      "#4ECDB4",
+  greenDim:   "#2A7A68",
+  amber:      "#D4A86A",
+  amberDim:   "#8A6B38",
+  rose:       "#D4A86A",
+  cyan:       "#5AAFCA",
 };
 
 const CHANNEL_C = {
-  "Organic Search": "#5BA88A",
-  "Content":        "#6B8FBF",
-  "Referral":       "#8B7BBF",
-  "Paid Search":    "#BFA06B",
-  "Paid Social":    "#BF6B6B",
-  "Partnerships":   "#7A8899",
+  "Organic Search": "#4ECDB4",
+  "Content":        "#5AAFCA",
+  "Referral":       "#9B8EC4",
+  "Paid Search":    "#D4A86A",
+  "Paid Social":    "#C48E6A",
+  "Partnerships":   "#7A91A8",
 };
 
 // ─── Realistic SaaS data (18-month window) ──────────────────────────────────
@@ -168,12 +174,12 @@ function CohortHeatmap() {
 
   const getColor = (val) => {
     if (val === null || val === undefined) return "transparent";
-    if (val >= 80) return "#2D5A42";
-    if (val >= 65) return "#3D6B52";
-    if (val >= 55) return "#6B6030";
-    if (val >= 45) return "#7A5A28";
-    if (val >= 35) return "#7A4030";
-    return "#6B2A2A";
+    if (val >= 80) return "#2A7A68";
+    if (val >= 65) return "#3A7A6A";
+    if (val >= 55) return "#4A7A5A";
+    if (val >= 45) return "#7A7A3A";
+    if (val >= 35) return "#8A6B38";
+    return "#7A5530";
   };
 
   return React.createElement("div", { className: "overflow-x-auto" },
@@ -231,12 +237,12 @@ function CohortHeatmap() {
     },
       React.createElement("span", null, "Retention %:"),
       ...[
-        { label: ">80%", color: "#2D5A42" },
-        { label: "65-80%", color: "#3D6B52" },
-        { label: "55-65%", color: "#6B6030" },
-        { label: "45-55%", color: "#7A5A28" },
-        { label: "35-45%", color: "#7A4030" },
-        { label: "<35%", color: "#6B2A2A" },
+        { label: ">80%", color: "#2A7A68" },
+        { label: "65-80%", color: "#3A7A6A" },
+        { label: "55-65%", color: "#4A7A5A" },
+        { label: "45-55%", color: "#7A7A3A" },
+        { label: "35-45%", color: "#8A6B38" },
+        { label: "<35%", color: "#7A5530" },
       ].map((item, i) => React.createElement("div", {
         key: i,
         className: "flex items-center gap-1",
@@ -267,10 +273,10 @@ function MrrWaterfall() {
         formatter: (v, name) => [`$${v.toLocaleString()}`, name],
       }),
       React.createElement(Legend, { wrapperStyle: { fontSize: 11, color: T.textMuted } }),
-      React.createElement(Bar, { dataKey: "newMrr", name: "New MRR", stackId: "pos", fill: T.green, radius: [2, 2, 0, 0], barSize: 24 }),
-      React.createElement(Bar, { dataKey: "expansion", name: "Expansion", stackId: "pos", fill: T.cyan, radius: [2, 2, 0, 0] }),
-      React.createElement(Bar, { dataKey: "contraction", name: "Contraction", stackId: "neg", fill: T.amber, radius: [0, 0, 2, 2] }),
-      React.createElement(Bar, { dataKey: "churn", name: "Churned", stackId: "neg", fill: T.rose, radius: [0, 0, 2, 2] }),
+      React.createElement(Bar, { dataKey: "newMrr", name: "New MRR", stackId: "pos", fill: T.teal, radius: [2, 2, 0, 0], barSize: 24 }),
+      React.createElement(Bar, { dataKey: "expansion", name: "Expansion", stackId: "pos", fill: T.accent, radius: [2, 2, 0, 0] }),
+      React.createElement(Bar, { dataKey: "contraction", name: "Contraction", stackId: "neg", fill: T.gold, radius: [0, 0, 2, 2] }),
+      React.createElement(Bar, { dataKey: "churn", name: "Churned", stackId: "neg", fill: "#C48E6A", radius: [0, 0, 2, 2] }),
       React.createElement(Line, { type: "monotone", dataKey: "net", name: "Net New", stroke: "#fff", strokeWidth: 2, dot: { fill: "#fff", r: 3 } }),
     ),
   );
@@ -285,7 +291,7 @@ function BenchmarkBar({ label, value, unit, good, great, orbit, invert }) {
 
   const isGood = invert ? orbit <= good : orbit >= good;
   const isGreat = invert ? orbit <= great : orbit >= great;
-  const color = isGreat ? T.green : isGood ? T.amber : T.rose;
+  const color = isGreat ? T.teal : isGood ? T.gold : "#C48E6A";
 
   return React.createElement("div", { className: "mb-4" },
     React.createElement("div", { className: "flex justify-between mb-1" },
@@ -372,17 +378,17 @@ function Simulator() {
       React.createElement(Slider, {
         label: "Retention improvement",
         value: retentionLift, onChange: setRetentionLift,
-        min: 0, max: 40, step: 5, unit: "%", color: T.green,
+        min: 0, max: 40, step: 5, unit: "%", color: T.teal,
       }),
       React.createElement(Slider, {
         label: "Monthly→Annual conversion lift",
         value: annualConv, onChange: setAnnualConv,
-        min: 0, max: 50, step: 5, unit: "%", color: T.cyan,
+        min: 0, max: 50, step: 5, unit: "%", color: T.accent,
       }),
       React.createElement(Slider, {
         label: "CAC reduction (channel reallocation)",
         value: cacReduction, onChange: setCacReduction,
-        min: 0, max: 30, step: 5, unit: "%", color: T.amber,
+        min: 0, max: 30, step: 5, unit: "%", color: T.gold,
       }),
     ),
 
@@ -417,7 +423,7 @@ function Simulator() {
         className: "mt-4 rounded-lg p-3 border",
         style: { background: `${T.green}10`, borderColor: `${T.green}30` },
       },
-        React.createElement("div", { className: "text-xs font-semibold mb-1", style: { color: T.green } }, "Combined Impact"),
+        React.createElement("div", { className: "text-xs font-semibold mb-1", style: { color: T.teal } }, "Combined Impact"),
         React.createElement("div", { className: "text-sm", style: { color: T.text } },
           arrImpact > 0 ? `+${fmt(arrImpact)} incremental ARR` : "",
           cacSavings > 0 ? ` · ${fmt(cacSavings)} CAC savings` : "",
@@ -664,16 +670,16 @@ function App() {
           ),
           React.createElement("ul", { className: "space-y-3 ml-1" },
             React.createElement("li", { className: "flex items-start gap-2 text-base", style: { color: T.text } },
-              React.createElement("span", { style: { color: T.rose } }, "•"),
+              React.createElement("span", { style: { color: T.gold } }, "•"),
               React.createElement("span", null,
-                React.createElement("strong", { style: { color: T.rose } }, "NRR is 94.2%, below 100%"),
+                React.createElement("strong", { style: { color: T.gold } }, "NRR is 94.2%, below 100%"),
                 " — existing customer revenue shrinks over time. Expansion revenue doesn't offset churn, which is a growth ceiling.",
               ),
             ),
             React.createElement("li", { className: "flex items-start gap-2 text-base", style: { color: T.text } },
-              React.createElement("span", { style: { color: T.amber } }, "•"),
+              React.createElement("span", { style: { color: "#C48E6A" } }, "•"),
               React.createElement("span", null,
-                React.createElement("strong", { style: { color: T.amber } }, "55% of acquisition spend goes to the 2 least efficient channels"),
+                React.createElement("strong", { style: { color: "#C48E6A" } }, "55% of acquisition spend goes to the 2 least efficient channels"),
                 " — Paid Social and Partnerships cost 2–4x more per customer but don't produce higher-LTV users.",
               ),
             ),
@@ -709,17 +715,17 @@ function App() {
         // Interpretation
         React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-4 mb-8" },
           React.createElement(Panel, null,
-            React.createElement("div", { className: "text-xs font-semibold uppercase tracking-wider mb-2", style: { color: T.rose } }, "The Problem"),
+            React.createElement("div", { className: "text-xs font-semibold uppercase tracking-wider mb-2", style: { color: "#C48E6A" } }, "The Problem"),
             React.createElement("div", { className: "text-3xl font-bold mb-2", style: { color: T.text } }, "18–35%"),
             React.createElement("p", { className: "text-base leading-relaxed", style: { color: T.textSec } }, "of each cohort churns in the first 3 months. This early-life attrition is the #1 drag on LTV and the most actionable window for intervention."),
           ),
           React.createElement(Panel, null,
-            React.createElement("div", { className: "text-xs font-semibold uppercase tracking-wider mb-2", style: { color: T.green } }, "Trend: Improving"),
+            React.createElement("div", { className: "text-xs font-semibold uppercase tracking-wider mb-2", style: { color: T.teal } }, "Trend: Improving"),
             React.createElement("div", { className: "text-3xl font-bold mb-2", style: { color: T.text } }, "82% → 88%"),
             React.createElement("p", { className: "text-base leading-relaxed", style: { color: T.textSec } }, "M1 retention improved from 82% (Q1'23) to 88% (Q4'24). Product or onboarding changes are working — but there's more to capture."),
           ),
           React.createElement(Panel, null,
-            React.createElement("div", { className: "text-xs font-semibold uppercase tracking-wider mb-2", style: { color: T.amber } }, "The Lever"),
+            React.createElement("div", { className: "text-xs font-semibold uppercase tracking-wider mb-2", style: { color: T.gold } }, "The Lever"),
             React.createElement("div", { className: "text-3xl font-bold mb-2", style: { color: T.text } }, "M1 → M3"),
             React.createElement("p", { className: "text-base leading-relaxed", style: { color: T.textSec } }, "The steepest drop. A 5pp improvement in M1–M3 retention adds ~$380K ARR/year. This is where onboarding investment pays off most."),
           ),
@@ -733,9 +739,9 @@ function App() {
           React.createElement(Panel, null,
             React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-4 mb-5" },
               [
-                { label: "Monthly", churn: "42.7%", m12: "50.8%", color: T.rose },
+                { label: "Monthly", churn: "42.7%", m12: "50.8%", color: T.gold },
                 { label: "Annual", churn: "11.3%", m12: "93.1%", color: T.accent },
-                { label: "2-Year", churn: "2.8%", m12: "96.5%", color: T.green },
+                { label: "2-Year", churn: "2.8%", m12: "96.5%", color: T.teal },
               ].map((d, i) => React.createElement("div", {
                 key: i,
                 className: "rounded-lg p-5 text-center border",
@@ -812,7 +818,7 @@ function App() {
                     React.createElement("td", { className: "text-right py-2 px-2 font-medium", style: { color: T.text } }, `$${ch.ltv.toLocaleString()}`),
                     React.createElement("td", {
                       className: "text-right py-2 px-2 font-bold",
-                      style: { color: ch.ratio >= 5 ? T.green : ch.ratio >= 3 ? T.amber : T.rose },
+                      style: { color: ch.ratio >= 5 ? T.teal : ch.ratio >= 3 ? T.gold : "#C48E6A" },
                     }, `${ch.ratio}x`),
                     React.createElement("td", { className: "text-right py-2 px-2", style: { color: T.textMuted } }, `${ch.payback} mo`),
                     React.createElement("td", { className: "text-right py-2 px-2", style: { color: T.textMuted } }, `${ch.churn}%`),
@@ -820,8 +826,8 @@ function App() {
                       React.createElement("span", {
                         className: "px-2 py-0.5 rounded-full text-[10px] font-semibold",
                         style: {
-                          color: ch.health === "Scale" ? T.green : ch.health === "Healthy" ? T.accent : T.amber,
-                          background: ch.health === "Scale" ? `${T.green}15` : ch.health === "Healthy" ? `${T.accent}15` : `${T.amber}15`,
+                          color: ch.health === "Scale" ? T.teal : ch.health === "Healthy" ? T.accent : T.gold,
+                          background: ch.health === "Scale" ? `${T.teal}15` : ch.health === "Healthy" ? `${T.accent}15` : `${T.gold}15`,
                         },
                       }, ch.health),
                     ),
@@ -847,7 +853,7 @@ function App() {
           className: "rounded-lg p-6 border",
           style: { background: `${T.green}08`, borderColor: `${T.green}30` },
         },
-          React.createElement("div", { className: "text-sm font-semibold uppercase tracking-wider mb-3", style: { color: T.green } }, "Recommendation: Budget Reallocation"),
+          React.createElement("div", { className: "text-sm font-semibold uppercase tracking-wider mb-3", style: { color: T.teal } }, "Recommendation: Budget Reallocation"),
           React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6" },
             React.createElement("div", null,
               React.createElement("p", { className: "text-lg leading-relaxed mb-3", style: { color: T.text } },
@@ -865,9 +871,9 @@ function App() {
             },
               React.createElement("div", { className: "text-xs font-semibold uppercase tracking-wider mb-3", style: { color: T.textMuted } }, "Projected Impact"),
               ...[
-                { label: "Blended CAC", from: "$376", to: "$310", color: T.green },
-                { label: "LTV:CAC", from: "7.3x", to: "9.5x", color: T.green },
-                { label: "Annual savings", from: "—", to: "$175K", color: T.green },
+                { label: "Blended CAC", from: "$376", to: "$310", color: T.teal },
+                { label: "LTV:CAC", from: "7.3x", to: "9.5x", color: T.teal },
+                { label: "Annual savings", from: "—", to: "$175K", color: T.teal },
               ].map((item, i) => React.createElement("div", {
                 key: i,
                 className: "flex justify-between items-center mb-2 text-sm",
@@ -912,7 +918,7 @@ function App() {
                 desc: "Invest in onboarding & success team. Target: reduce M1-M3 churn by 25%.",
                 ltv: "$3,430", cac: "$376", ratio: "9.1x",
                 arr: "+$520K", cost: "$180K", roi: "2.9x",
-                color: T.green,
+                color: T.teal,
               },
               {
                 name: "Channel Rebalance",
@@ -926,7 +932,7 @@ function App() {
                 desc: "Offer month-3 annual discount + annual-first pricing on signup page.",
                 ltv: "$3,840", cac: "$376", ratio: "10.2x",
                 arr: "+$780K", cost: "$95K", roi: "8.2x",
-                color: T.cyan,
+                color: T.accent,
               },
             ].map((s, i) => React.createElement(Panel, { key: i },
               React.createElement("div", {
