@@ -970,19 +970,9 @@ function App() {
           ),
         ),
 
-        // Payback curves
-        React.createElement(Section, {
-          title: "Time to Payback",
-          sub: "How quickly each channel earns back its CAC. White dashed line = breakeven (100%).",
-        },
-          React.createElement(Panel, null,
-            React.createElement(PaybackCurves),
-          ),
-        ),
-
-        // Reallocation recommendation — enhanced
+        // Reallocation recommendation — right after channel table
         React.createElement("div", {
-          className: "rounded-lg p-6 border",
+          className: "rounded-lg p-6 border mb-6",
           style: { background: `${T.teal}08`, borderColor: `${T.teal}30` },
         },
           React.createElement("div", { className: "text-sm font-semibold uppercase tracking-wider mb-4", style: { color: T.teal } }, "Strategic Recommendation: Channel Portfolio Optimization"),
@@ -1032,6 +1022,16 @@ function App() {
                 "Based on channel-level unit economics. Assumes content ramp takes 3-6 months to reach full organic volume. Short-term paid reduction offset by higher-LTV organic pipeline.",
               ),
             ),
+          ),
+        ),
+
+        // Payback curves
+        React.createElement(Section, {
+          title: "Time to Payback",
+          sub: "How quickly each channel earns back its CAC. White dashed line = breakeven (100%).",
+        },
+          React.createElement(Panel, null,
+            React.createElement(PaybackCurves),
           ),
         ),
       ),
