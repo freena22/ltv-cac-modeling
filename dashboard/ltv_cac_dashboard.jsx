@@ -123,15 +123,15 @@ const fmt = (n) => {
 // ─── Components ─────────────────────────────────────────────────────────────
 function MetricCard({ label, value, sub, context }) {
   return React.createElement("div", {
-    className: "rounded-lg border p-5",
+    className: "rounded-lg border p-3 sm:p-5",
     style: { background: T.surface, borderColor: T.border },
   },
     React.createElement("div", {
-      className: "text-sm font-semibold uppercase tracking-wider mb-2",
+      className: "text-xs sm:text-sm font-semibold uppercase tracking-wider mb-1 sm:mb-2",
       style: { color: T.textMuted },
     }, label),
     React.createElement("div", {
-      className: "text-4xl font-bold",
+      className: "text-2xl sm:text-4xl font-bold",
       style: { color: T.text },
     }, value),
     sub && React.createElement("div", {
@@ -146,14 +146,14 @@ function MetricCard({ label, value, sub, context }) {
 }
 
 function Section({ id, title, sub, children }) {
-  return React.createElement("section", { id, className: "mb-10" },
-    React.createElement("div", { className: "mb-5" },
+  return React.createElement("section", { id, className: "mb-8 sm:mb-10" },
+    React.createElement("div", { className: "mb-4 sm:mb-5" },
       React.createElement("h2", {
-        className: "text-3xl font-bold",
+        className: "text-xl sm:text-3xl font-bold",
         style: { color: T.text },
       }, title),
       sub && React.createElement("p", {
-        className: "text-base mt-1.5 leading-relaxed",
+        className: "text-sm sm:text-base mt-1 sm:mt-1.5 leading-relaxed",
         style: { color: T.textSec },
       }, sub),
     ),
@@ -569,7 +569,7 @@ function App() {
       className: "border-b sticky top-0 z-20",
       style: { background: T.bg, borderColor: T.border },
     },
-      React.createElement("div", { className: "max-w-7xl mx-auto px-4 py-3 flex items-center justify-between" },
+      React.createElement("div", { className: "max-w-7xl mx-auto px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2" },
         React.createElement("div", null,
           React.createElement("div", { className: "flex items-center gap-2" },
             React.createElement("div", {
@@ -581,14 +581,17 @@ function App() {
               style: { color: T.textMuted },
             }, "Orbit SaaS · Unit Economics"),
           ),
-          React.createElement("h1", { className: "text-3xl font-bold mt-0.5" }, "LTV / CAC Command Center"),
+          React.createElement("h1", { className: "text-xl sm:text-3xl font-bold mt-0.5" }, "LTV / CAC Command Center"),
         ),
-        // Nav pills
-        React.createElement("nav", { className: "flex gap-1" },
+        // Nav pills — scrollable on mobile
+        React.createElement("nav", {
+          className: "flex gap-1 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 pb-1 sm:pb-0",
+          style: { WebkitOverflowScrolling: "touch" },
+        },
           navItems.map(item => React.createElement("button", {
             key: item.id,
             onClick: () => setActiveNav(item.id),
-            className: `px-4 py-2 rounded-md text-sm font-medium transition-all ${
+            className: `px-3 sm:px-4 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
               activeNav === item.id ? "" : "hover:opacity-80"
             }`,
             style: {
@@ -601,7 +604,7 @@ function App() {
     ),
 
     // Content
-    React.createElement("main", { className: "max-w-7xl mx-auto px-4 py-6" },
+    React.createElement("main", { className: "max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6" },
 
       // ── Overview ──
       activeNav === "overview" && React.createElement(React.Fragment, null,
@@ -621,7 +624,7 @@ function App() {
           ),
         ),
         // KPI row — 4 primary metrics with deep context
-        React.createElement("div", { className: "grid grid-cols-2 md:grid-cols-4 gap-4 mb-6" },
+        React.createElement("div", { className: "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6" },
           React.createElement(MetricCard, { label: "ARR", value: fmt(KPI.arr), sub: `${KPI.active.toLocaleString()} active customers`, context: "Orbit is at the $1–5M ARR stage. At this scale, unit economics discipline determines whether you reach $10M or stall." }),
           React.createElement(MetricCard, { label: "LTV : CAC", value: `${KPI.ltvCac}x`, sub: `LTV ${fmt(KPI.blendedLtv)} / CAC ${fmt(KPI.blendedCac)}`, context: "Median B2B SaaS is 3.2x (across 612 companies). Orbit's 7.3x suggests efficient growth — or underinvestment in acquisition." }),
           React.createElement(MetricCard, { label: "Payback Period", value: `${KPI.payback} months`, sub: `ARPU $${KPI.arpu}/mo`, context: "Median at this ARR scale is 8.8 months. Orbit's 7.7 months is healthy — cash isn't trapped in long payback cycles." }),
@@ -634,7 +637,7 @@ function App() {
           sub: "Benchmarked against 612 B2B SaaS companies (a16z/ChartMogul data). Dashed = median, solid = top quartile.",
         },
           React.createElement(Panel, null,
-            React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-x-8" },
+            React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2" },
               React.createElement(BenchmarkBar, { label: "LTV:CAC Ratio", value: "7.3", unit: "x", good: 3, great: 5, orbit: 7.3 }),
               React.createElement(BenchmarkBar, { label: "Payback Period", value: "7.7", unit: " mo", good: 18, great: 12, orbit: 7.7, invert: true }),
               React.createElement(BenchmarkBar, { label: "Monthly Churn", value: "0.82", unit: "%", good: 3, great: 1.5, orbit: 0.82, invert: true }),
