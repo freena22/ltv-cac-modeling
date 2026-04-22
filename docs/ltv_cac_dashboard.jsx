@@ -274,7 +274,7 @@ function MrrWaterfall() {
       }),
       React.createElement(Legend, { wrapperStyle: { fontSize: 11, color: T.textMuted } }),
       React.createElement(Bar, { dataKey: "newMrr", name: "New MRR", stackId: "pos", fill: T.teal, radius: [2, 2, 0, 0], barSize: 24 }),
-      React.createElement(Bar, { dataKey: "expansion", name: "Expansion", stackId: "pos", fill: T.accent, radius: [2, 2, 0, 0] }),
+      React.createElement(Bar, { dataKey: "expansion", name: "Expansion", stackId: "pos", fill: T.lavender, radius: [2, 2, 0, 0] }),
       React.createElement(Bar, { dataKey: "contraction", name: "Contraction", stackId: "neg", fill: T.gold, radius: [0, 0, 2, 2] }),
       React.createElement(Bar, { dataKey: "churn", name: "Churned", stackId: "neg", fill: "#C48E6A", radius: [0, 0, 2, 2] }),
       React.createElement(Line, { type: "monotone", dataKey: "net", name: "Net New", stroke: "#fff", strokeWidth: 2, dot: { fill: "#fff", r: 3 } }),
