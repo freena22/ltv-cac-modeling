@@ -11,7 +11,7 @@ const {
   ResponsiveContainer, Cell, ComposedChart, ReferenceLine,
 } = window.Recharts;
 
-// ─── Design tokens ──────────────────────────────────────────────────────────
+// ─── Design tokens (muted, low-saturation palette) ─────────────────────────
 const T = {
   bg:         "#0B1120",
   surface:    "#111827",
@@ -19,28 +19,28 @@ const T = {
   border:     "#1E293B",
   borderHi:   "#334155",
   text:       "#E2E8F0",
+  textSec:    "#94A3B8",
   textMuted:  "#64748B",
   textDim:    "#475569",
-  accent:     "#3B82F6",
-  green:      "#22C55E",
-  greenDim:   "#166534",
-  greenMuted: "#4ADE80",
-  amber:      "#F59E0B",
-  amberDim:   "#92400E",
-  rose:       "#EF4444",
-  roseDim:    "#991B1B",
-  purple:     "#A78BFA",
-  cyan:       "#22D3EE",
-  pink:       "#EC4899",
+  accent:     "#6B8FBF",
+  green:      "#5BA88A",
+  greenDim:   "#2D5A42",
+  amber:      "#BFA06B",
+  amberDim:   "#7A6028",
+  rose:       "#BF6B6B",
+  roseDim:    "#7A3A3A",
+  purple:     "#8B7BBF",
+  cyan:       "#5BA8B8",
+  pink:       "#BF6B8F",
 };
 
 const CHANNEL_C = {
-  "Organic Search": "#22C55E",
-  "Content":        "#3B82F6",
-  "Referral":       "#A78BFA",
-  "Paid Search":    "#F59E0B",
-  "Paid Social":    "#EF4444",
-  "Partnerships":   "#64748B",
+  "Organic Search": "#5BA88A",
+  "Content":        "#6B8FBF",
+  "Referral":       "#8B7BBF",
+  "Paid Search":    "#BFA06B",
+  "Paid Social":    "#BF6B6B",
+  "Partnerships":   "#7A8899",
 };
 
 // ─── Realistic SaaS data (18-month window) ──────────────────────────────────
@@ -115,42 +115,40 @@ const fmt = (n) => {
 };
 
 // ─── Components ─────────────────────────────────────────────────────────────
-function MetricCard({ label, value, sub, trend, small }) {
+function MetricCard({ label, value, sub, context }) {
   return React.createElement("div", {
-    className: `rounded-lg border p-${small ? 3 : 4}`,
+    className: "rounded-lg border p-4",
     style: { background: T.surface, borderColor: T.border },
   },
     React.createElement("div", {
-      className: "text-[10px] font-semibold uppercase tracking-wider mb-1",
+      className: "text-xs font-semibold uppercase tracking-wider mb-1.5",
       style: { color: T.textMuted },
     }, label),
-    React.createElement("div", { className: "flex items-baseline gap-2" },
-      React.createElement("span", {
-        className: `${small ? "text-lg" : "text-2xl"} font-bold`,
-        style: { color: T.text },
-      }, value),
-      trend && React.createElement("span", {
-        className: "text-xs font-medium",
-        style: { color: trend > 0 ? T.green : T.rose },
-      }, `${trend > 0 ? "+" : ""}${trend}%`),
-    ),
+    React.createElement("div", {
+      className: "text-xl font-bold",
+      style: { color: T.text },
+    }, value),
     sub && React.createElement("div", {
-      className: "text-[11px] mt-1",
+      className: "text-xs mt-1",
       style: { color: T.textDim },
     }, sub),
+    context && React.createElement("div", {
+      className: "text-[11px] mt-2 pt-2",
+      style: { color: T.textSec, borderTop: `1px solid ${T.border}` },
+    }, context),
   );
 }
 
 function Section({ id, title, sub, children }) {
   return React.createElement("section", { id, className: "mb-10" },
-    React.createElement("div", { className: "mb-4" },
+    React.createElement("div", { className: "mb-5" },
       React.createElement("h2", {
-        className: "text-lg font-bold",
+        className: "text-xl font-bold",
         style: { color: T.text },
       }, title),
       sub && React.createElement("p", {
-        className: "text-sm mt-0.5",
-        style: { color: T.textMuted },
+        className: "text-sm mt-1 leading-relaxed",
+        style: { color: T.textSec },
       }, sub),
     ),
     children,
@@ -170,18 +168,18 @@ function CohortHeatmap() {
 
   const getColor = (val) => {
     if (val === null || val === undefined) return "transparent";
-    if (val >= 80) return "#166534";
-    if (val >= 65) return "#15803d";
-    if (val >= 55) return "#a16207";
-    if (val >= 45) return "#b45309";
-    if (val >= 35) return "#c2410c";
-    return "#991b1b";
+    if (val >= 80) return "#2D5A42";
+    if (val >= 65) return "#3D6B52";
+    if (val >= 55) return "#6B6030";
+    if (val >= 45) return "#7A5A28";
+    if (val >= 35) return "#7A4030";
+    return "#6B2A2A";
   };
 
   return React.createElement("div", { className: "overflow-x-auto" },
     React.createElement("table", {
-      className: "w-full text-xs",
-      style: { minWidth: 700, borderCollapse: "separate", borderSpacing: 2 },
+      className: "w-full text-sm",
+      style: { minWidth: 720, borderCollapse: "separate", borderSpacing: 2 },
     },
       React.createElement("thead", null,
         React.createElement("tr", null,
@@ -219,8 +217,8 @@ function CohortHeatmap() {
                 background: getColor(val),
                 color: val !== null ? "#fff" : "transparent",
                 fontWeight: 600,
-                fontSize: 10,
-                padding: "4px 2px",
+                fontSize: 12,
+                padding: "5px 3px",
               },
             }, val !== null ? `${val}%` : "");
           }),
@@ -233,12 +231,12 @@ function CohortHeatmap() {
     },
       React.createElement("span", null, "Retention %:"),
       ...[
-        { label: ">80%", color: "#166534" },
-        { label: "65-80%", color: "#15803d" },
-        { label: "55-65%", color: "#a16207" },
-        { label: "45-55%", color: "#b45309" },
-        { label: "35-45%", color: "#c2410c" },
-        { label: "<35%", color: "#991b1b" },
+        { label: ">80%", color: "#2D5A42" },
+        { label: "65-80%", color: "#3D6B52" },
+        { label: "55-65%", color: "#6B6030" },
+        { label: "45-55%", color: "#7A5A28" },
+        { label: "35-45%", color: "#7A4030" },
+        { label: "<35%", color: "#6B2A2A" },
       ].map((item, i) => React.createElement("div", {
         key: i,
         className: "flex items-center gap-1",
@@ -344,11 +342,11 @@ function Simulator() {
   const cacSavings = Math.round(KPI.totalAcqSpend * (cacReduction / 100));
 
   function Slider({ label, value, onChange, min, max, step, unit, color }) {
-    return React.createElement("div", { className: "mb-5" },
+    return React.createElement("div", { className: "mb-6" },
       React.createElement("div", { className: "flex justify-between mb-2" },
-        React.createElement("span", { className: "text-xs font-medium", style: { color: T.text } }, label),
+        React.createElement("span", { className: "text-sm font-medium", style: { color: T.text } }, label),
         React.createElement("span", {
-          className: "text-sm font-bold px-2 py-0.5 rounded",
+          className: "text-base font-bold px-2 py-0.5 rounded",
           style: { color, background: `${color}20` },
         }, `${value > 0 ? "+" : ""}${value}${unit}`),
       ),
@@ -405,10 +403,10 @@ function Simulator() {
           className: "rounded-lg p-3",
           style: { background: T.surfaceAlt, border: `1px solid ${T.border}` },
         },
-          React.createElement("div", { className: "text-[10px] uppercase tracking-wider mb-1", style: { color: T.textMuted } }, m.label),
-          React.createElement("div", { className: "text-lg font-bold", style: { color: T.text } }, m.proj),
+          React.createElement("div", { className: "text-xs uppercase tracking-wider mb-1.5", style: { color: T.textMuted } }, m.label),
+          React.createElement("div", { className: "text-xl font-bold", style: { color: T.text } }, m.proj),
           React.createElement("div", {
-            className: "text-[10px] mt-0.5",
+            className: "text-xs mt-1",
             style: { color: m.delta > 0 && m.label !== "New CAC" ? T.green : m.delta < 0 && m.label === "New CAC" ? T.green : T.textDim },
           }, `was ${m.now}`),
         )),
@@ -584,7 +582,7 @@ function App() {
           navItems.map(item => React.createElement("button", {
             key: item.id,
             onClick: () => setActiveNav(item.id),
-            className: `px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+            className: `px-4 py-2 rounded-md text-sm font-medium transition-all ${
               activeNav === item.id ? "" : "hover:opacity-80"
             }`,
             style: {
@@ -601,16 +599,26 @@ function App() {
 
       // ── Overview ──
       activeNav === "overview" && React.createElement(React.Fragment, null,
-        // KPI row
-        React.createElement("div", { className: "grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 mb-8" },
-          React.createElement(MetricCard, { label: "ARR", value: fmt(KPI.arr), small: true }),
-          React.createElement(MetricCard, { label: "MRR", value: fmt(KPI.mrr), trend: 4.2, small: true }),
-          React.createElement(MetricCard, { label: "Active", value: KPI.active.toLocaleString(), small: true }),
-          React.createElement(MetricCard, { label: "ARPU", value: `$${KPI.arpu}`, small: true }),
-          React.createElement(MetricCard, { label: "LTV:CAC", value: `${KPI.ltvCac}x`, small: true }),
-          React.createElement(MetricCard, { label: "Payback", value: `${KPI.payback}mo`, small: true }),
-          React.createElement(MetricCard, { label: "Churn", value: `${KPI.monthlyChurn}%`, sub: "monthly", small: true }),
-          React.createElement(MetricCard, { label: "NRR", value: `${KPI.nrr}%`, small: true }),
+        // Context header
+        React.createElement("div", {
+          className: "rounded-lg p-5 mb-6 border",
+          style: { background: T.surface, borderColor: T.border },
+        },
+          React.createElement("p", { className: "text-base leading-relaxed", style: { color: T.text } },
+            React.createElement("strong", null, "What is this?"),
+            " — This dashboard models the unit economics of Orbit, a B2B SaaS platform with 7,043 customers. It answers the fundamental growth question: ",
+            React.createElement("em", { style: { color: T.accent } }, "where should we spend the next dollar to maximize sustainable revenue?"),
+          ),
+          React.createElement("p", { className: "text-sm mt-2 leading-relaxed", style: { color: T.textSec } },
+            "We analyze customer lifetime value (LTV), acquisition cost (CAC) by channel, cohort retention patterns, and simulate the impact of different growth strategies on unit economics.",
+          ),
+        ),
+        // KPI row — 4 primary metrics with context
+        React.createElement("div", { className: "grid grid-cols-2 md:grid-cols-4 gap-4 mb-6" },
+          React.createElement(MetricCard, { label: "ARR", value: fmt(KPI.arr), sub: `${KPI.active.toLocaleString()} active customers`, context: "Annual recurring revenue. Foundation metric for SaaS valuation." }),
+          React.createElement(MetricCard, { label: "LTV : CAC", value: `${KPI.ltvCac}x`, sub: `LTV ${fmt(KPI.blendedLtv)} / CAC ${fmt(KPI.blendedCac)}`, context: "Healthy is >3x. Above 5x means efficient growth or room to invest more." }),
+          React.createElement(MetricCard, { label: "Payback Period", value: `${KPI.payback} months`, sub: `ARPU $${KPI.arpu}/mo`, context: "Time to recoup acquisition cost. Under 12 months is strong for B2B SaaS." }),
+          React.createElement(MetricCard, { label: "Net Revenue Retention", value: `${KPI.nrr}%`, sub: `Monthly churn: ${KPI.monthlyChurn}%`, context: "Below 100% means existing revenue shrinks over time. Top SaaS targets >110%." }),
         ),
 
         // Benchmark context
@@ -640,29 +648,58 @@ function App() {
 
         // Key insight
         React.createElement("div", {
-          className: "rounded-lg p-5 border",
+          className: "rounded-lg p-6 border",
           style: { background: `${T.accent}08`, borderColor: `${T.accent}30` },
         },
-          React.createElement("div", { className: "text-xs font-semibold uppercase tracking-wider mb-2", style: { color: T.accent } }, "So What?"),
-          React.createElement("p", { className: "text-sm leading-relaxed", style: { color: T.text } },
-            "Orbit's unit economics are healthy on paper — ",
+          React.createElement("div", { className: "text-sm font-semibold uppercase tracking-wider mb-3", style: { color: T.accent } }, "So What Does This Mean?"),
+          React.createElement("p", { className: "text-base leading-relaxed mb-3", style: { color: T.text } },
+            "Orbit's unit economics look healthy on paper — ",
             React.createElement("strong", null, "7.3x LTV:CAC"),
             " and ",
             React.createElement("strong", null, "7.7-month payback"),
-            " beat most B2B SaaS benchmarks. But two problems hide under the surface: ",
-            React.createElement("strong", { style: { color: T.rose } }, "NRR is below 100%"),
-            " (meaning existing customers shrink over time), and ",
-            React.createElement("strong", { style: { color: T.amber } }, "55% of acquisition spend"),
-            " goes to the two least efficient channels. The real opportunity isn't acquiring more — it's retaining better and spending smarter.",
+            " beat most B2B SaaS benchmarks.",
+          ),
+          React.createElement("p", { className: "text-base leading-relaxed mb-3", style: { color: T.text } },
+            "But two problems hide under the surface:",
+          ),
+          React.createElement("ul", { className: "space-y-2 ml-1" },
+            React.createElement("li", { className: "flex items-start gap-2 text-sm", style: { color: T.text } },
+              React.createElement("span", { style: { color: T.rose } }, "•"),
+              React.createElement("span", null,
+                React.createElement("strong", { style: { color: T.rose } }, "NRR is 94.2%, below 100%"),
+                " — existing customer revenue shrinks over time. Expansion revenue doesn't offset churn, which is a growth ceiling.",
+              ),
+            ),
+            React.createElement("li", { className: "flex items-start gap-2 text-sm", style: { color: T.text } },
+              React.createElement("span", { style: { color: T.amber } }, "•"),
+              React.createElement("span", null,
+                React.createElement("strong", { style: { color: T.amber } }, "55% of acquisition spend goes to the 2 least efficient channels"),
+                " — Paid Social and Partnerships cost 2–4x more per customer but don't produce higher-LTV users.",
+              ),
+            ),
+          ),
+          React.createElement("p", { className: "text-sm mt-4 font-medium", style: { color: T.textSec } },
+            "The real opportunity isn't acquiring more customers — it's retaining better and spending smarter.",
           ),
         ),
       ),
 
       // ── Cohorts ──
       activeNav === "cohorts" && React.createElement(React.Fragment, null,
+        React.createElement("div", {
+          className: "rounded-lg p-5 mb-6 border",
+          style: { background: T.surface, borderColor: T.border },
+        },
+          React.createElement("p", { className: "text-base leading-relaxed", style: { color: T.text } },
+            React.createElement("strong", null, "Why cohort analysis?"),
+            " — Averages hide the truth. A \"25% churn rate\" could mean everyone churns evenly, or that early users churn rapidly while mature users stick around forever. Cohort analysis shows ",
+            React.createElement("em", { style: { color: T.accent } }, "when"),
+            " customers leave and whether retention is improving over time.",
+          ),
+        ),
         React.createElement(Section, {
           title: "Cohort Retention Heatmap",
-          sub: "Quarterly cohorts, monthly retention — the canonical SaaS health check",
+          sub: "Each row is a quarterly signup cohort. Each cell shows what % of that cohort is still active at month M. Green = strong, red = concerning.",
         },
           React.createElement(Panel, null,
             React.createElement(CohortHeatmap),
@@ -673,18 +710,18 @@ function App() {
         React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-4 mb-8" },
           React.createElement(Panel, null,
             React.createElement("div", { className: "text-xs font-semibold uppercase tracking-wider mb-2", style: { color: T.rose } }, "The Problem"),
-            React.createElement("div", { className: "text-2xl font-bold mb-1", style: { color: T.text } }, "18–35%"),
-            React.createElement("p", { className: "text-xs", style: { color: T.textMuted } }, "of each cohort churns in the first 3 months. This early-life attrition is the #1 drag on LTV."),
+            React.createElement("div", { className: "text-3xl font-bold mb-2", style: { color: T.text } }, "18–35%"),
+            React.createElement("p", { className: "text-sm leading-relaxed", style: { color: T.textSec } }, "of each cohort churns in the first 3 months. This early-life attrition is the #1 drag on LTV and the most actionable window for intervention."),
           ),
           React.createElement(Panel, null,
-            React.createElement("div", { className: "text-xs font-semibold uppercase tracking-wider mb-2", style: { color: T.green } }, "The Good News"),
-            React.createElement("div", { className: "text-2xl font-bold mb-1", style: { color: T.text } }, "Q3→Q4 2024"),
-            React.createElement("p", { className: "text-xs", style: { color: T.textMuted } }, "Recent cohorts show improving M1 retention (87→88%), suggesting product or onboarding changes are working."),
+            React.createElement("div", { className: "text-xs font-semibold uppercase tracking-wider mb-2", style: { color: T.green } }, "Trend: Improving"),
+            React.createElement("div", { className: "text-3xl font-bold mb-2", style: { color: T.text } }, "82% → 88%"),
+            React.createElement("p", { className: "text-sm leading-relaxed", style: { color: T.textSec } }, "M1 retention improved from 82% (Q1'23) to 88% (Q4'24). Product or onboarding changes are working — but there's more to capture."),
           ),
           React.createElement(Panel, null,
             React.createElement("div", { className: "text-xs font-semibold uppercase tracking-wider mb-2", style: { color: T.amber } }, "The Lever"),
-            React.createElement("div", { className: "text-2xl font-bold mb-1", style: { color: T.text } }, "M1 → M3"),
-            React.createElement("p", { className: "text-xs", style: { color: T.textMuted } }, "The steepest drop. A 5pp improvement in M1–M3 retention would add ~$380K ARR annually."),
+            React.createElement("div", { className: "text-3xl font-bold mb-2", style: { color: T.text } }, "M1 → M3"),
+            React.createElement("p", { className: "text-sm leading-relaxed", style: { color: T.textSec } }, "The steepest drop. A 5pp improvement in M1–M3 retention adds ~$380K ARR/year. This is where onboarding investment pays off most."),
           ),
         ),
 
@@ -701,12 +738,13 @@ function App() {
                 { label: "2-Year", churn: "2.8%", m12: "96.5%", color: T.green },
               ].map((d, i) => React.createElement("div", {
                 key: i,
-                className: "rounded-lg p-4 text-center border",
-                style: { borderColor: `${d.color}40`, background: `${d.color}08` },
+                className: "rounded-lg p-5 text-center border",
+                style: { borderColor: `${d.color}40`, background: `${d.color}10` },
               },
-                React.createElement("div", { className: "text-sm font-bold mb-1", style: { color: d.color } }, d.label),
-                React.createElement("div", { className: "text-2xl font-bold", style: { color: T.text } }, d.m12),
-                React.createElement("div", { className: "text-[10px]", style: { color: T.textMuted } }, "12-month retention"),
+                React.createElement("div", { className: "text-base font-bold mb-2", style: { color: d.color } }, d.label),
+                React.createElement("div", { className: "text-3xl font-bold mb-1", style: { color: T.text } }, d.m12),
+                React.createElement("div", { className: "text-xs", style: { color: T.textSec } }, "12-month retention"),
+                React.createElement("div", { className: "text-xs mt-1", style: { color: T.textMuted } }, `Churn rate: ${d.churn}`),
               )),
             ),
           ),
@@ -715,9 +753,18 @@ function App() {
 
       // ── Channels ──
       activeNav === "channels" && React.createElement(React.Fragment, null,
+        React.createElement("div", {
+          className: "rounded-lg p-5 mb-6 border",
+          style: { background: T.surface, borderColor: T.border },
+        },
+          React.createElement("p", { className: "text-base leading-relaxed", style: { color: T.text } },
+            React.createElement("strong", null, "Why channel economics matter"),
+            " — Not all customers are created equal. A customer from Organic Search costs $179 to acquire; one from Partnerships costs $757. If they generate similar revenue, the channel choice determines whether growth is profitable or just burning cash.",
+          ),
+        ),
         React.createElement(Section, {
           title: "Channel Economics: CAC vs LTV",
-          sub: "Each dot = one acquisition channel. Size = customer volume. Dashed line = 3x breakeven.",
+          sub: "Higher and to the left = better (high LTV, low CAC). The best channels live in the top-left corner.",
         },
           React.createElement(Panel, null,
             React.createElement(ChannelBubble),
@@ -725,12 +772,15 @@ function App() {
         ),
 
         // Channel table
-        React.createElement(Section, { title: "Channel Breakdown" },
+        React.createElement(Section, {
+          title: "Channel Breakdown",
+          sub: "Full performance table. \"Scale\" = invest more aggressively. \"Watch\" = efficiency below target, needs optimization or reallocation.",
+        },
           React.createElement(Panel, null,
             React.createElement("div", { className: "overflow-x-auto" },
               React.createElement("table", {
-                className: "w-full text-xs",
-                style: { minWidth: 650 },
+                className: "w-full text-sm",
+                style: { minWidth: 680 },
               },
                 React.createElement("thead", null,
                   React.createElement("tr", { style: { borderBottom: `1px solid ${T.border}` } },
@@ -792,29 +842,61 @@ function App() {
           ),
         ),
 
-        // Reallocation
+        // Reallocation recommendation
         React.createElement("div", {
-          className: "rounded-lg p-5 border",
+          className: "rounded-lg p-6 border",
           style: { background: `${T.green}08`, borderColor: `${T.green}30` },
         },
-          React.createElement("div", { className: "text-xs font-semibold uppercase tracking-wider mb-2", style: { color: T.green } }, "Recommendation"),
-          React.createElement("p", { className: "text-sm leading-relaxed", style: { color: T.text } },
-            "Organic Search, Content, and Referral deliver ",
-            React.createElement("strong", null, "11–14x LTV:CAC"),
-            " and pay back in under 4 months. Yet they receive only 33% of acquisition spend. ",
-            "Shifting 15–20% of budget from Paid Social & Partnerships to these channels would reduce blended CAC by ~$50 ",
-            "and improve overall LTV:CAC from 7.3x to ~9.5x — ",
-            React.createElement("strong", null, "without sacrificing customer volume"),
-            " (organic channels are not capacity-constrained at current spend levels).",
+          React.createElement("div", { className: "text-sm font-semibold uppercase tracking-wider mb-3", style: { color: T.green } }, "Recommendation: Budget Reallocation"),
+          React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6" },
+            React.createElement("div", null,
+              React.createElement("p", { className: "text-base leading-relaxed mb-3", style: { color: T.text } },
+                "Organic Search, Content, and Referral deliver ",
+                React.createElement("strong", null, "11–14x LTV:CAC"),
+                " and pay back in under 4 months. Yet they receive only 33% of acquisition spend.",
+              ),
+              React.createElement("p", { className: "text-sm leading-relaxed", style: { color: T.textSec } },
+                "Shifting 15–20% of budget from Paid Social & Partnerships to these channels would reduce blended CAC by ~$50 and improve LTV:CAC from 7.3x to ~9.5x.",
+              ),
+            ),
+            React.createElement("div", {
+              className: "rounded-lg p-4",
+              style: { background: T.surfaceAlt, border: `1px solid ${T.border}` },
+            },
+              React.createElement("div", { className: "text-xs font-semibold uppercase tracking-wider mb-3", style: { color: T.textMuted } }, "Projected Impact"),
+              ...[
+                { label: "Blended CAC", from: "$376", to: "$310", color: T.green },
+                { label: "LTV:CAC", from: "7.3x", to: "9.5x", color: T.green },
+                { label: "Annual savings", from: "—", to: "$175K", color: T.green },
+              ].map((item, i) => React.createElement("div", {
+                key: i,
+                className: "flex justify-between items-center mb-2 text-sm",
+              },
+                React.createElement("span", { style: { color: T.textSec } }, item.label),
+                React.createElement("span", null,
+                  React.createElement("span", { className: "line-through mr-2 text-xs", style: { color: T.textDim } }, item.from),
+                  React.createElement("span", { className: "font-bold", style: { color: item.color } }, item.to),
+                ),
+              )),
+            ),
           ),
         ),
       ),
 
       // ── Simulator ──
       activeNav === "simulator" && React.createElement(React.Fragment, null,
+        React.createElement("div", {
+          className: "rounded-lg p-5 mb-6 border",
+          style: { background: T.surface, borderColor: T.border },
+        },
+          React.createElement("p", { className: "text-base leading-relaxed", style: { color: T.text } },
+            React.createElement("strong", null, "How to use this"),
+            " — Move the sliders to model \"what-if\" scenarios. For example: \"What if we improve early retention by 20% through better onboarding?\" or \"What if we shift 15% of paid budget to organic channels?\" The right panel recalculates all unit economics in real time.",
+          ),
+        ),
         React.createElement(Section, {
           title: "Growth Scenario Simulator",
-          sub: "Drag the sliders to model different growth strategies and see projected impact on unit economics",
+          sub: "Each lever represents a realistic growth initiative. Combined impact shows incremental ARR and cost savings.",
         },
           React.createElement(Simulator),
         ),
