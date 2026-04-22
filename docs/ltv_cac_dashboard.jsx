@@ -125,7 +125,7 @@ function MetricCard({ label, value, sub, context }) {
       style: { color: T.textMuted },
     }, label),
     React.createElement("div", {
-      className: "text-3xl font-bold",
+      className: "text-4xl font-bold",
       style: { color: T.text },
     }, value),
     sub && React.createElement("div", {
@@ -143,7 +143,7 @@ function Section({ id, title, sub, children }) {
   return React.createElement("section", { id, className: "mb-10" },
     React.createElement("div", { className: "mb-5" },
       React.createElement("h2", {
-        className: "text-2xl font-bold",
+        className: "text-3xl font-bold",
         style: { color: T.text },
       }, title),
       sub && React.createElement("p", {
@@ -575,7 +575,7 @@ function App() {
               style: { color: T.textMuted },
             }, "Orbit SaaS · Unit Economics"),
           ),
-          React.createElement("h1", { className: "text-2xl font-bold mt-0.5" }, "LTV / CAC Command Center"),
+          React.createElement("h1", { className: "text-3xl font-bold mt-0.5" }, "LTV / CAC Command Center"),
         ),
         // Nav pills
         React.createElement("nav", { className: "flex gap-1" },
