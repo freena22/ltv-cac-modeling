@@ -125,7 +125,7 @@ function MetricCard({ label, value, sub, context }) {
       style: { color: T.textMuted },
     }, label),
     React.createElement("div", {
-      className: "text-4xl font-bold",
+      className: "text-5xl font-bold",
       style: { color: T.text },
     }, value),
     sub && React.createElement("div", {
